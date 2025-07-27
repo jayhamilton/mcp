@@ -6,6 +6,20 @@
   box-sizing: border-box;
 }
 
+.subtext {
+  position: relative;
+  display: inline-block;
+}
+
+.subtext .char {
+  display: inline-block;
+  perspective: 1000px;
+}
+
+.subtext .word {
+  display: inline-block;
+  margin-right: 0.25em;
+}
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.6;

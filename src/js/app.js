@@ -2,16 +2,20 @@
 import { NavigationManager } from './modules/navigation.js';
 import { QuizManager } from './modules/quiz.js';
 import { AceEditorManager } from './modules/ace-editor.js';
-import { DiagramAnimationManager, RAGAnimationManager } from './modules/animations.js';
+import { RAGAnimationManager } from './modules/animation-rag.js';
+import { MCPAnimationManager } from './modules/animation-mcp.js';
+import { BannerAnimationManager } from './modules/animation-banner.js';
 import { ContentLoader } from './modules/content-loader.js';
+
 
 class GenAIContextTraining {
   constructor() {
     this.contentLoader = new ContentLoader();
     this.navigationManager = new NavigationManager();
     this.quizManager = new QuizManager(this.navigationManager);
-    this.diagramAnimationManager = new DiagramAnimationManager();
+    this.mcpAnimationManager = new MCPAnimationManager();
     this.ragAnimationManager = new RAGAnimationManager();
+    this.bannerAnimationManager = new BannerAnimationManager();
     
     this.init();
   }
@@ -31,8 +35,9 @@ class GenAIContextTraining {
   initializeComponents() {
     this.contentLoader.loadAllSections();
     AceEditorManager.initializeAceEditors();
-    this.diagramAnimationManager.initializeDiagramAnimation();
+    this.mcpAnimationManager.initializeMCPAnimation();
     this.ragAnimationManager.initializeRAGAnimation();
+    this.bannerAnimationManager.initializeBannerAnimation();
   }
 
   exposeGlobalFunctions() {
