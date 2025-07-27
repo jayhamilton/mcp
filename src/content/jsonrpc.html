@@ -1,0 +1,221 @@
+<h2 class="section-title">JSON-RPC Foundation</h2>
+
+<div class="learning-objectives">
+  <h3>Learning Objectives</h3>
+  <ul>
+    <li>Understand JSON-RPC 2.0 fundamentals and message structure</li>
+    <li>Learn about requests, responses, notifications, and error handling</li>
+    <li>Explore batch requests and practical implementation patterns</li>
+  </ul>
+</div>
+
+<p>JSON-RPC 2.0 is a stateless, light-weight remote procedure call (RPC) protocol that MCP uses for all
+  client-server communication. It's transport-agnostic and uses JSON for data encoding.</p>
+
+<h3>Core Message Types</h3>
+
+<div class="highlight-box" style="text-align: left;">
+  <h3>Request Messages</h3>
+  <p>Used to invoke a method on the remote server. Every request must include:</p>
+  <ul>
+    <li><strong>jsonrpc:</strong> Always "2.0"</li>
+    <li><strong>method:</strong> String containing the method name</li>
+    <li><strong>params:</strong> Parameters for the method (optional)</li>
+    <li><strong>id:</strong> Unique identifier for matching responses</li>
+  </ul>
+</div>
+
+<div class="code-block">
+  <div class="ace-editor" id="editor3">// MCP Request Example - List available resources
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "resources/list",
+  "params": {
+    "cursor": null
+  }
+}
+
+// MCP Request Example - Call a tool
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "search_database",
+    "arguments": {
+      "query": "SELECT * FROM users",
+      "limit": 10
+    },
+  }
+}
+
+  </div>
+</div>
+
+<h3>Response Messages</h3>
+<p>Responses match requests using the same <code>id</code> and contain either a <code>result</code> or
+  <code>error</code> field:
+</p>
+
+<div class="code-block">
+  <div class="ace-editor" id="editor4">// Successful Response
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "resources": [
+      {
+        "uri": "file://documents/readme.txt",
+        "name": "README",
+        "mimeType": "text/plain",
+        "description": "Project documentation"
+      }
+    ],
+    "nextCursor": null
+  }
+}
+// Error Response
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "error": {
+    "code": -32602,
+    "message": "Invalid params",
+    "data": {
+      "field": "query",
+      "reason": "SQL injection detected"
+    }
+  }
+}
+  </div>
+</div>
+
+<div class="highlight-box" style="text-align: left;">
+  <h3>Standard Error Codes</h3>
+  <p><strong>-32700:</strong> Parse error - Invalid JSON</p>
+  <p><strong>-32600:</strong> Invalid Request - Missing required fields</p>
+  <p><strong>-32601:</strong> Method not found</p>
+  <p><strong>-32602:</strong> Invalid params</p>
+  <p><strong>-32603:</strong> Internal error</p>
+  <p><strong>-32000 to -32099:</strong> Server-defined errors</p>
+</div>
+
+<h3>Notifications</h3>
+<p>One-way messages without responses. Used for events and updates where no reply is expected:</p>
+
+<div class="code-block">
+  <div class="ace-editor" id="editor5">// Notification - No 'id' field, no response expected
+{
+  "jsonrpc": "2.0",
+  "method": "resources/updated",
+  "params": {
+    "uri": "file://documents/readme.txt",
+    "changeType": "modified"
+  }
+}
+
+// Progress notification during long operations
+{
+  "jsonrpc": "2.0",
+  "method": "progress",
+  "params": {
+    "token": "search-123",
+    "value": {
+      "kind": "report",
+      "percentage": 65,
+      "message": "Processing documents..."
+    }
+  }
+}
+  </div>
+</div>
+
+<h3>Batch Requests</h3>
+<p>Multiple requests can be sent together as an array for efficiency:</p>
+
+<div class="code-block">
+  <div class="ace-editor" id="editor6">// Batch Request
+[
+  {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "resources/list"
+  },
+  {
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/list"
+  },
+  {
+    "jsonrpc": "2.0",
+    "method": "ping" // Notification in batch
+  }
+]
+
+// Batch Response (notifications don't get responses)
+[
+  {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+      "resources": [...
+      ]
+    }
+  },
+  {
+    "jsonrpc": "2.0",
+    "id": 2,
+    "result": {
+      "tools": [...
+      ]
+    }
+  }
+]
+  </div>
+</div>
+
+<h3>MCP-Specific Patterns</h3>
+<p>MCP uses several conventions on top of JSON-RPC:</p>
+
+<ul style="text-align: left;">
+  <li><strong>Method Namespacing:</strong> Methods use "/" to create namespaces (e.g., "resources/list",
+    "tools/call")</li>
+  <li><strong>Capability Negotiation:</strong> Initial "initialize" method establishes what features are
+    supported</li>
+  <li><strong>Streaming Support:</strong> Progress notifications for long-running operations</li>
+  <li><strong>Resource URIs:</strong> Standardized URI schemes for identifying resources</li>
+</ul>
+
+<div class="code-block">
+  <div class="ace-editor" id="editor7">// MCP Initialization Handshake
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2024-11-05",
+    "capabilities": {
+      "roots": {
+          "listChanged": true
+      },
+      "sampling": {}
+    },
+    "clientInfo": {
+      "name": "my-mcp-client",
+      "version": "1.0.0"
+    }
+  }
+}
+  </div>
+</div>
+
+<div class="highlight-box" style="text-align: left;">
+  <h3>Best Practices for JSON-RPC in MCP</h3>
+  <p><strong>Always validate:</strong> Check jsonrpc version and required fields</p>
+  <p><strong>Handle errors gracefully:</strong> Provide meaningful error messages and codes</p>
+  <p><strong>Use appropriate IDs:</strong> Ensure request IDs are unique and trackable</p>
+  <p><strong>Implement timeouts:</strong> Don't wait indefinitely for responses</p>
+</div>
+
+<button class="btn" onclick="markSectionComplete('jsonrpc')">Mark Complete</button>

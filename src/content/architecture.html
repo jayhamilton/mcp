@@ -1,0 +1,88 @@
+<h2 class="section-title">Architecture & Design Patterns</h2>
+
+<div class="learning-objectives">
+  <h3>Learning Objectives</h3>
+  <ul>
+    <li>Understand MCP architecture patterns</li>
+    <li>Learn client-server communication flow</li>
+    <li>Explore transport layer options</li>
+  </ul>
+</div>
+
+<div class="diagram-container">
+  <h3>MCP Communication Flow</h3>
+  <svg class="communication-diagram" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+    <!-- Client Box -->
+    <rect class="client-box" x="50" y="150" width="120" height="80" rx="10" fill="#667eea" stroke="#5a67d8" stroke-width="2"/>
+    <text x="110" y="195" text-anchor="middle" fill="white" font-family="Arial" font-size="14" font-weight="bold">MCP Client</text>
+
+    <!-- Server Box -->
+    <rect class="server-box" x="630" y="150" width="120" height="80" rx="10" fill="#48bb78" stroke="#38a169" stroke-width="2"/>
+    <text x="690" y="195" text-anchor="middle" fill="white" font-family="Arial" font-size="14" font-weight="bold">MCP Server</text>
+
+    <!-- Request Path -->
+    <path id="requestPath" class="message-path request-path" d="M 170 170 Q 400 120 630 170" stroke="#667eea" stroke-width="3" fill="none"/>
+    
+    <!-- Response Path -->
+    <path id="responsePath" class="message-path response-path" d="M 630 210 Q 400 260 170 210" stroke="#48bb78" stroke-width="3" fill="none"/>
+
+    <!-- Moving dots -->
+    <circle class="message-dot request-dot" r="6" fill="#667eea"/>
+    <circle class="message-dot response-dot" r="6" fill="#48bb78"/>
+
+    <!-- Step indicators -->
+    <g class="step-circle step-1">
+      <circle cx="110" cy="120" r="15" fill="#f56565" stroke="white" stroke-width="2"/>
+      <text class="step-text" x="110" y="125" text-anchor="middle" fill="white" font-size="12" font-weight="bold">1</text>
+    </g>
+    
+    <g class="step-circle step-2">
+      <circle cx="300" cy="90" r="15" fill="#ed8936" stroke="white" stroke-width="2"/>
+      <text class="step-text" x="300" y="95" text-anchor="middle" fill="white" font-size="12" font-weight="bold">2</text>
+    </g>
+    
+    <g class="step-circle step-3">
+      <circle cx="690" cy="120" r="15" fill="#38b2ac" stroke="white" stroke-width="2"/>
+      <text class="step-text" x="690" y="125" text-anchor="middle" fill="white" font-size="12" font-weight="bold">3</text>
+    </g>
+    
+    <g class="step-circle step-4">
+      <circle cx="500" cy="290" r="15" fill="#9f7aea" stroke="white" stroke-width="2"/>
+      <text class="step-text" x="500" y="295" text-anchor="middle" fill="white" font-size="12" font-weight="bold">4</text>
+    </g>
+
+    <!-- Message labels -->
+    <text class="message-text request-text" x="250" y="110" text-anchor="middle" fill="#4a5568" font-size="11">resources/read</text>
+    <text class="message-text request-details" x="250" y="125" text-anchor="middle" fill="#718096" font-size="9">{"uri": "file://data.json"}</text>
+    
+    <text class="message-text response-text" x="450" y="280" text-anchor="middle" fill="#4a5568" font-size="11">Response</text>
+    <text class="message-text response-details" x="450" y="295" text-anchor="middle" fill="#718096" font-size="9">{"content": "..."}</text>
+  </svg>
+
+  <div class="diagram-controls">
+    <button id="playAnimation" class="diagram-btn">Play</button>
+    <button id="pauseAnimation" class="diagram-btn" disabled>Pause</button>
+    <button id="resetAnimation" class="diagram-btn">Reset</button>
+  </div>
+</div>
+
+<h3>Transport Layers</h3>
+<ul>
+  <li><strong>HTTP/HTTPS:</strong> Web-based applications and services</li>
+  <li><strong>WebSocket:</strong> Real-time, bidirectional communication</li>
+  <li><strong>stdio:</strong> Command-line tools and local processes</li>
+</ul>
+
+<div class="code-block">
+  <div class="ace-editor" id="editor4">// Transport Layer Examples
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+
+// stdio transport for CLI tools
+const stdioTransport = new StdioServerTransport();
+
+// SSE transport for web applications
+const sseTransport = new SSEServerTransport('/mcp', response);</div>
+</div>
+
+<button class="btn" onclick="markSectionComplete('architecture')">Complete Architecture</button>

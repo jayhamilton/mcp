@@ -1,0 +1,55 @@
+<h2 class="section-title">What is Model Context Protocol (MCP)?</h2>
+
+<div class="learning-objectives">
+  <h3>Learning Objectives</h3>
+  <ul>
+    <li>Understand the core concepts of MCP</li>
+    <li>Identify use cases and benefits</li>
+    <li>Recognize MCP's role in AI application architecture</li>
+  </ul>
+</div>
+
+<p>Model Context Protocol (MCP) is an open standard for connecting AI assistants to external data sources and tools. It enables seamless integration between language models and various services, databases, and APIs.</p>
+
+<div class="highlight-box">
+  <h3>Key Benefits</h3>
+  <p><strong>Standardization:</strong> Provides a unified way to connect AI models to external resources without custom integrations for each service.</p>
+  <p><strong>Security:</strong> Implements secure communication patterns with proper authentication and authorization.</p>
+  <p><strong>Scalability:</strong> Supports multiple concurrent connections and efficient resource management.</p>
+</div>
+
+<h3>Core Components</h3>
+<ul>
+  <li><strong>Clients:</strong> AI applications (like Claude) that consume external data</li>
+  <li><strong>Servers:</strong> Services that provide data, tools, or capabilities</li>
+  <li><strong>Transports:</strong> Communication layers (HTTP, WebSocket, stdio)</li>
+  <li><strong>Resources:</strong> Data sources (files, databases, APIs)</li>
+  <li><strong>Tools:</strong> Executable functions the AI can invoke</li>
+</ul>
+
+<div class="code-block">
+  <div class="ace-editor" id="editor1">// Example MCP server registration
+const server = new MCPServer({
+  name: "my-data-source",
+  version: "1.0.0"
+});
+
+server.addResource({
+  uri: "file://documents/",
+  name: "Company Documents", 
+  mimeType: "text/plain"
+});
+
+server.addTool({
+  name: "search_documents",
+  description: "Search through company documents",
+  inputSchema: {
+    type: "object",
+    properties: {
+      query: { type: "string" }
+    }
+  }
+});</div>
+</div>
+
+<button class="btn" onclick="markSectionComplete('overview')">Complete Overview</button>

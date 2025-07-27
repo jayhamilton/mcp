@@ -1,0 +1,101 @@
+<h2 class="section-title">Implementation Guide</h2>
+
+<div class="learning-objectives">
+  <h3>Learning Objectives</h3>
+  <ul>
+    <li>Set up a basic MCP server</li>
+    <li>Implement resource and tool handlers</li>
+    <li>Handle client connections</li>
+  </ul>
+</div>
+
+<h3>Setting up MCP Server</h3>
+<div class="code-block">
+  <div class="ace-editor large" id="editor5">import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+
+const server = new Server(
+  {
+    name: 'example-server',
+    version: '0.1.0',
+  },
+  {
+    capabilities: {
+      resources: {},
+      tools: {},
+    },
+  }
+);
+
+// Add a simple resource handler
+server.setRequestHandler('resources/list', async () => {
+  return {
+    resources: [
+      {
+        uri: 'file://example.txt',
+        name: 'Example File',
+        description: 'An example text file',
+        mimeType: 'text/plain',
+      },
+    ],
+  };
+});
+
+// Add a tool
+server.setRequestHandler('tools/list', async () => {
+  return {
+    tools: [
+      {
+        name: 'echo',
+        description: 'Echo the input back',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            message: {
+              type: 'string',
+              description: 'Message to echo',
+            },
+          },
+          required: ['message'],
+        },
+      },
+    ],
+  };
+});
+
+async function main() {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+}
+
+main().catch(console.error);</div>
+</div>
+
+<h3>Key Implementation Steps</h3>
+<ol>
+  <li>Install the MCP SDK: <code>npm install @modelcontextprotocol/sdk</code></li>
+  <li>Define server capabilities and metadata</li>
+  <li>Implement request handlers for resources and tools</li>
+  <li>Set up transport layer (stdio, HTTP, WebSocket)</li>
+  <li>Handle initialization and error scenarios</li>
+</ol>
+
+<div class="code-block">
+  <div class="ace-editor" id="editor6">// Tool implementation example
+server.setRequestHandler('tools/call', async (request) => {
+  const { name, arguments: args } = request.params;
+  
+  if (name === 'echo') {
+    return {
+      content: [{
+        type: 'text',
+        text: `Echo: ${args.message}`
+      }]
+    };
+  }
+  
+  throw new Error(`Unknown tool: ${name}`);
+});</div>
+</div>
+
+<button class="btn" onclick="markSectionComplete('implementation')">Complete Implementation</button>

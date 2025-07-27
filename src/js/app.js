@@ -32,8 +32,11 @@ class GenAIContextTraining {
     this.exposeGlobalFunctions();
   }
 
-  initializeComponents() {
-    this.contentLoader.loadAllSections();
+  async initializeComponents() {
+    // Load content first, then initialize components that depend on DOM content
+    await this.contentLoader.loadAllSections();
+    
+    // Initialize components after content is loaded
     AceEditorManager.initializeAceEditors();
     this.mcpAnimationManager.initializeMCPAnimation();
     this.ragAnimationManager.initializeRAGAnimation();

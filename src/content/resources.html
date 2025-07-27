@@ -1,0 +1,68 @@
+<h2 class="section-title">Additional Resources</h2>
+
+<h3>Official Documentation</h3>
+<ul>
+  <li><a href="https://spec.modelcontextprotocol.io/" target="_blank">MCP Specification</a></li>
+  <li><a href="https://github.com/modelcontextprotocol" target="_blank">MCP GitHub Organization</a></li>
+  <li><a href="https://github.com/modelcontextprotocol/servers" target="_blank">Example MCP Servers</a></li>
+</ul>
+
+<h3>SDK and Tools</h3>
+<ul>
+  <li><a href="https://www.npmjs.com/package/@modelcontextprotocol/sdk" target="_blank">MCP SDK (Node.js)</a></li>
+  <li><a href="https://pypi.org/project/mcp/" target="_blank">MCP Python SDK</a></li>
+  <li><a href="https://github.com/modelcontextprotocol/inspector" target="_blank">MCP Inspector</a></li>
+</ul>
+
+<h3>Community Examples</h3>
+<ul>
+  <li><strong>File System Server:</strong> Access local files and directories</li>
+  <li><strong>Database Connector:</strong> Query SQL and NoSQL databases</li>
+  <li><strong>API Gateway Server:</strong> Connect to REST and GraphQL APIs</li>
+  <li><strong>Git Repository Server:</strong> Access code repositories and version history</li>
+</ul>
+
+<div class="code-block">
+  <div class="ace-editor" id="editor8">// Example: File System MCP Server
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { readFile, readdir } from 'fs/promises';
+
+const server = new Server({
+  name: 'filesystem-server',
+  version: '1.0.0'
+});
+
+server.setRequestHandler('resources/read', async (request) => {
+  const { uri } = request.params;
+  const filePath = uri.replace('file://', '');
+  
+  try {
+    const content = await readFile(filePath, 'utf-8');
+    return {
+      contents: [{
+        uri,
+        mimeType: 'text/plain',
+        text: content
+      }]
+    };
+  } catch (error) {
+    throw new Error(`Failed to read file: ${error.message}`);
+  }
+});</div>
+</div>
+
+<div class="highlight-box">
+  <h3>Next Steps</h3>
+  <p>Ready to implement MCP in your project? Start with a simple file system server and gradually add more complex capabilities. The MCP community provides extensive examples and support.</p>
+  
+  <h4>Recommended Learning Path:</h4>
+  <ol>
+    <li>Build a basic resource server</li>
+    <li>Add tool capabilities</li>
+    <li>Implement error handling and validation</li>
+    <li>Integrate with existing systems</li>
+    <li>Explore advanced patterns like RAG</li>
+  </ol>
+</div>
+
+<button class="btn" onclick="markSectionComplete('resources')">Complete Resources</button>

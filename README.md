@@ -29,6 +29,14 @@ genai-context-training/
 └── src/
     ├── css/
     │   └── styles.css            # All CSS styles
+    ├── content/                  # HTML content modules
+    │   ├── overview.html         # Overview section content
+    │   ├── jsonrpc.html          # JSON-RPC section content
+    │   ├── architecture.html     # Architecture section content
+    │   ├── implementation.html   # Implementation section content
+    │   ├── rag.html              # RAG integration section content
+    │   ├── quiz.html             # Quiz section content
+    │   └── resources.html        # Resources section content
     └── js/
         ├── app.js                # Main application orchestrator
         └── modules/
@@ -36,6 +44,7 @@ genai-context-training/
             ├── quiz.js           # Quiz functionality
             ├── ace-editor.js     # Code editor initialization
             ├── animations.js     # GSAP diagram animations
+            ├── banner-animation.js # Banner text animation
             └── content-loader.js # Dynamic content loading
 ```
 
@@ -54,14 +63,22 @@ genai-context-training/
 
 ### Development Setup
 
-For local development with a web server:
+**Important:** This application requires a web server to load content modules. It will not work properly when opened directly as a file.
+
+For local development:
 
 ```bash
 # Install dependencies (optional)
 npm install
 
-# Serve locally (if using a local server)
+# Serve locally using http-server
 npx http-server . -p 8080
+
+# Or use Python's built-in server
+python -m http.server 8080
+
+# Or use Node.js if you have it installed
+node -e "require('http').createServer(require('fs').readFile.bind(null, 'index.html')).listen(8080)"
 ```
 
 Then navigate to `http://localhost:8080`

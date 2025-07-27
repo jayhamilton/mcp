@@ -1,0 +1,88 @@
+<h2 class="section-title">Knowledge Check</h2>
+<p>Test your understanding of Model Context Protocol concepts:</p>
+
+<div class="quiz-section">
+  <div class="quiz-question">1. What protocol does MCP build upon?</div>
+  <ul class="quiz-options">
+    <li onclick="selectAnswer(this, false)">HTTP/2</li>
+    <li onclick="selectAnswer(this, true)">JSON-RPC 2.0</li>
+    <li onclick="selectAnswer(this, false)">GraphQL</li>
+    <li onclick="selectAnswer(this, false)">REST</li>
+  </ul>
+</div>
+
+<div class="quiz-section">
+  <div class="quiz-question">2. Which are valid MCP transport layers?</div>
+  <ul class="quiz-options">
+    <li onclick="selectAnswer(this, false)">HTTP and FTP only</li>
+    <li onclick="selectAnswer(this, true)">HTTP, WebSocket, and stdio</li>
+    <li onclick="selectAnswer(this, false)">Only WebSocket</li>
+    <li onclick="selectAnswer(this, false)">TCP and UDP</li>
+  </ul>
+</div>
+
+<div class="quiz-section">
+  <div class="quiz-question">3. What is the primary purpose of MCP?</div>
+  <ul class="quiz-options">
+    <li onclick="selectAnswer(this, false)">Replace HTTP protocol</li>
+    <li onclick="selectAnswer(this, true)">Connect AI assistants to external data sources</li>
+    <li onclick="selectAnswer(this, false)">Create web applications</li>
+    <li onclick="selectAnswer(this, false)">Manage databases</li>
+  </ul>
+</div>
+
+<div class="quiz-section">
+  <div class="quiz-question">4. In MCP architecture, what role does the server play?</div>
+  <ul class="quiz-options">
+    <li onclick="selectAnswer(this, true)">Provides data, tools, or capabilities</li>
+    <li onclick="selectAnswer(this, false)">Consumes external data</li>
+    <li onclick="selectAnswer(this, false)">Routes network traffic</li>
+    <li onclick="selectAnswer(this, false)">Stores user credentials</li>
+  </ul>
+</div>
+
+<div class="quiz-section">
+  <div class="quiz-question">5. Which MCP request type is used to read resource content?</div>
+  <ul class="quiz-options">
+    <li onclick="selectAnswer(this, false)">resources/list</li>
+    <li onclick="selectAnswer(this, true)">resources/read</li>
+    <li onclick="selectAnswer(this, false)">tools/call</li>
+    <li onclick="selectAnswer(this, false)">initialize</li>
+  </ul>
+</div>
+
+<div class="quiz-section">
+  <div class="quiz-question">6. What does RAG stand for in the context of AI?</div>
+  <ul class="quiz-options">
+    <li onclick="selectAnswer(this, false)">Random Access Generation</li>
+    <li onclick="selectAnswer(this, true)">Retrieval Augmented Generation</li>
+    <li onclick="selectAnswer(this, false)">Rapid Application Generation</li>
+    <li onclick="selectAnswer(this, false)">Resource Access Gateway</li>
+  </ul>
+</div>
+
+<div class="quiz-section">
+  <div class="quiz-question">7. How does MCP enhance RAG implementations?</div>
+  <ul class="quiz-options">
+    <li onclick="selectAnswer(this, false)">By replacing vector databases</li>
+    <li onclick="selectAnswer(this, true)">By providing standardized access to knowledge sources</li>
+    <li onclick="selectAnswer(this, false)">By eliminating the need for embeddings</li>
+    <li onclick="selectAnswer(this, false)">By reducing response quality</li>
+  </ul>
+</div>
+
+<div class="quiz-section">
+  <div class="quiz-question">8. Which is a key benefit of using MCP servers?</div>
+  <ul class="quiz-options">
+    <li onclick="selectAnswer(this, false)">Faster internet connection</li>
+    <li onclick="selectAnswer(this, false)">Better graphics rendering</li>
+    <li onclick="selectAnswer(this, true)">Standardized integration patterns</li>
+    <li onclick="selectAnswer(this, false)">Automatic code generation</li>
+  </ul>
+</div>
+
+<div id="quiz-results" style="display: none;">
+  <h3>Quiz Results</h3>
+  <p id="score-text"></p>
+  <button class="btn" onclick="resetQuiz()">Retake Quiz</button>
+</div>
