@@ -5,7 +5,7 @@ import { AceEditorManager } from './modules/ace-editor.js';
 import { DiagramAnimationManager, RAGAnimationManager } from './modules/animations.js';
 import { ContentLoader } from './modules/content-loader.js';
 
-class MCPLearningModule {
+class GenAIContextTraining {
   constructor() {
     this.contentLoader = new ContentLoader();
     this.navigationManager = new NavigationManager();
@@ -47,4 +47,4 @@ class MCPLearningModule {
 }
 
 // Initialize the application
-new MCPLearningModule();
+new GenAIContextTraining();

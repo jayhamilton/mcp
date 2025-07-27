@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an MCP (Model Context Protocol) learning and development repository containing:
+This is GenAI Context Training - an MCP (Model Context Protocol) learning and development repository containing:
 
 - **Primary focus**: Learning module for MCP concepts and implementation
 - **Main file**: `mcp_learning_module.html` - Interactive learning module covering MCP fundamentals

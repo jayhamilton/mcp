@@ -1,7 +1,7 @@
 {
-  "name": "mcp",
+  "name": "genai-context-training",
   "version": "1.0.0",
-  "description": "",
+  "description": "Interactive learning module for Model Context Protocol (MCP) implementation",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
