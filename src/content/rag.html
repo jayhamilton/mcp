@@ -1,157 +1,322 @@
-<h2 class="section-title">Retrieval Augmented Generation with MCP</h2>
+ <h2 class="section-title">Retrieval Augmented Generation with MCP</h2>
 
-<div class="learning-objectives">
-  <h3>Learning Objectives</h3>
-  <ul>
-    <li>Understand RAG architecture with MCP</li>
-    <li>Learn how MCP enhances knowledge retrieval</li>
-    <li>Implement RAG patterns using MCP servers</li>
-  </ul>
-</div>
+        <div class="learning-objectives">
+          <h3>Learning Objectives</h3>
+          <ul>
+            <li>Understand how MCP enables sophisticated RAG implementations</li>
+            <li>Learn to design MCP servers for data retrieval and knowledge access</li>
+            <li>Explore patterns for multi-source information synthesis</li>
+            <li>Implement real-time data integration for AI responses</li>
+          </ul>
+        </div>
 
-<p>Retrieval Augmented Generation (RAG) enhances AI responses by incorporating external knowledge sources. MCP provides a standardized way to connect AI models to diverse knowledge repositories, making RAG implementations more robust and maintainable.</p>
+        <h3>What is RAG?</h3>
+        <p>Retrieval Augmented Generation (RAG) enhances AI responses by retrieving relevant information from external knowledge bases before generating answers. MCP provides the perfect foundation for RAG systems by offering standardized access to diverse data sources.</p>
 
-<div class="diagram-container">
-  <h3>RAG Workflow with MCP</h3>
-  <svg class="communication-diagram" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
-    <!-- User Input -->
-    <rect class="user-input" x="50" y="50" width="100" height="60" rx="8" fill="#4299e1" stroke="#3182ce" stroke-width="2"/>
-    <text x="100" y="85" text-anchor="middle" fill="white" font-family="Arial" font-size="12" font-weight="bold">User Query</text>
-    
-    <!-- AI Client -->
-    <rect class="ai-client" x="350" y="200" width="100" height="60" rx="8" fill="#805ad5" stroke="#6b46c1" stroke-width="2"/>
-    <text x="400" y="235" text-anchor="middle" fill="white" font-family="Arial" font-size="12" font-weight="bold">AI Client</text>
-    
-    <!-- Knowledge Sources -->
-    <g class="knowledge-sources">
-      <rect x="150" y="350" width="80" height="50" rx="5" fill="#48bb78" stroke="#38a169" stroke-width="1"/>
-      <text x="190" y="380" text-anchor="middle" fill="white" font-size="10" font-weight="bold">Database</text>
-      
-      <rect x="260" y="350" width="80" height="50" rx="5" fill="#ed8936" stroke="#dd6b20" stroke-width="1"/>
-      <text x="300" y="380" text-anchor="middle" fill="white" font-size="10" font-weight="bold">Documents</text>
-      
-      <rect x="370" y="350" width="80" height="50" rx="5" fill="#9f7aea" stroke="#805ad5" stroke-width="1"/>
-      <text x="410" y="380" text-anchor="middle" fill="white" font-size="10" font-weight="bold">APIs</text>
-      
-      <rect x="480" y="350" width="80" height="50" rx="5" fill="#38b2ac" stroke="#319795" stroke-width="1"/>
-      <text x="520" y="380" text-anchor="middle" fill="white" font-size="10" font-weight="bold">Knowledge Base</text>
-    </g>
-    
-    <!-- Final Response -->
-    <rect class="final-response" x="650" y="50" width="100" height="60" rx="8" fill="#38a169" stroke="#2f855a" stroke-width="2"/>
-    <text x="700" y="85" text-anchor="middle" fill="white" font-family="Arial" font-size="12" font-weight="bold">Enhanced Response</text>
+        <div class="highlight-box">
+          <h3>MCP's Advantages for RAG</h3>
+          <p><strong>Real-time Access:</strong> Unlike static training data, MCP enables access to live, up-to-date information</p>
+          <p><strong>Structured Retrieval:</strong> JSON-RPC protocol ensures consistent data formats for reliable retrieval</p>
+          <p><strong>Multi-source Integration:</strong> Query multiple data sources simultaneously for comprehensive responses</p>
+          <p><strong>Security & Authentication:</strong> Built-in access controls for sensitive data sources</p>
+        </div>
 
-    <!-- MCP Layer -->
-    <rect class="mcp-layer" x="100" y="180" width="500" height="100" rx="10" fill="none" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="8,4"/>
-    <text x="350" y="175" text-anchor="middle" fill="#4a5568" font-size="12" font-weight="bold">MCP Protocol Layer</text>
+        <h3>RAG Architecture with MCP</h3>
+        <p>A typical RAG implementation using MCP involves:</p>
+        <ul>
+          <li><strong>Query Processing:</strong> AI client receives user query</li>
+          <li><strong>Retrieval Phase:</strong> MCP tools search relevant data sources</li>
+          <li><strong>Context Assembly:</strong> Retrieved information is formatted and combined</li>
+          <li><strong>Generation Phase:</strong> AI generates response using retrieved context</li>
+        </ul>
 
-    <!-- Paths and animations will be added by GSAP -->
-    <path class="rag-path user-to-ai" d="M 150 80 L 350 230" stroke="#4299e1" stroke-width="2" fill="none"/>
-    <path class="rag-path ai-to-db" d="M 380 260 L 190 350" stroke="#48bb78" stroke-width="2" fill="none"/>
-    <path class="rag-path ai-to-docs" d="M 390 260 L 300 350" stroke="#ed8936" stroke-width="2" fill="none"/>
-    <path class="rag-path ai-to-apis" d="M 410 260 L 410 350" stroke="#9f7aea" stroke-width="2" fill="none"/>
-    <path class="rag-path ai-to-kb" d="M 420 260 L 520 350" stroke="#38b2ac" stroke-width="2" fill="none"/>
-    <path class="rag-path ai-to-response" d="M 450 230 L 650 80" stroke="#38a169" stroke-width="2" fill="none"/>
+        <div class="diagram-container">
+          <h4>Interactive RAG Workflow</h4>
+          <svg class="communication-diagram" viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg" id="ragDiagram">
+            <!-- Background -->
+            <rect width="900" height="500" fill="#ffffff" rx="10"/>
+            
+            <!-- User Input -->
+            <g class="user-input">
+              <rect x="50" y="50" width="120" height="80" rx="10" fill="#e53e3e" stroke="#c53030" stroke-width="2"/>
+              <text x="110" y="80" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="12" font-weight="bold">USER</text>
+              <text x="110" y="100" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10">Query Input</text>
+              <text x="110" y="115" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="9">"Explain MCP"</text>
+            </g>
 
-    <!-- Return paths (dashed) -->
-    <path class="rag-path db-return" d="M 190 350 L 380 260" stroke="#48bb78" stroke-width="1" stroke-dasharray="3,3" fill="none"/>
-    <path class="rag-path docs-return" d="M 300 350 L 390 260" stroke="#ed8936" stroke-width="1" stroke-dasharray="3,3" fill="none"/>
-    <path class="rag-path apis-return" d="M 410 350 L 410 260" stroke="#9f7aea" stroke-width="1" stroke-dasharray="3,3" fill="none"/>
-    <path class="rag-path kb-return" d="M 520 350 L 420 260" stroke="#38b2ac" stroke-width="1" stroke-dasharray="3,3" fill="none"/>
+            <!-- AI Client -->
+            <g class="ai-client">
+              <rect x="250" y="200" width="140" height="100" rx="10" fill="#667eea" stroke="#5a67d8" stroke-width="2"/>
+              <text x="320" y="230" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="14" font-weight="bold">AI CLIENT</text>
+              <text x="320" y="250" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10">(Claude/GPT)</text>
+              <text x="320" y="270" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="9">Query Processing</text>
+              <text x="320" y="285" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="9">& Generation</text>
+            </g>
 
-    <!-- Arrows -->
-    <polygon class="rag-arrow user-to-ai-arrow" points="340,225 350,230 340,235" fill="#4299e1"/>
-    <polygon class="rag-arrow ai-to-db-arrow" points="195,345 190,350 185,345" fill="#48bb78"/>
-    <polygon class="rag-arrow ai-to-docs-arrow" points="305,345 300,350 295,345" fill="#ed8936"/>
-    <polygon class="rag-arrow ai-to-apis-arrow" points="415,345 410,350 405,345" fill="#9f7aea"/>
-    <polygon class="rag-arrow ai-to-kb-arrow" points="525,345 520,350 515,345" fill="#38b2ac"/>
-    <polygon class="rag-arrow ai-to-response-arrow" points="645,85 650,80 645,75" fill="#38a169"/>
+            <!-- Knowledge Sources -->
+            <g class="knowledge-sources">
+              <!-- Database -->
+              <rect x="550" y="80" width="100" height="70" rx="8" fill="#48bb78" stroke="#38a169" stroke-width="2"/>
+              <text x="600" y="105" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="11" font-weight="bold">DATABASE</text>
+              <text x="600" y="120" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="8">Structured Data</text>
+              <text x="600" y="135" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="8">SQL Queries</text>
 
-    <!-- Animated dots -->
-    <circle class="rag-dot user-query-dot" cx="100" cy="80" r="4" fill="#4299e1"/>
-    <circle class="rag-dot db-dot" cx="190" cy="375" r="3" fill="#48bb78"/>
-    <circle class="rag-dot docs-dot" cx="300" cy="375" r="3" fill="#ed8936"/>
-    <circle class="rag-dot apis-dot" cx="410" cy="375" r="3" fill="#9f7aea"/>
-    <circle class="rag-dot kb-dot" cx="520" cy="375" r="3" fill="#38b2ac"/>
-    <circle class="rag-dot context-dot" cx="400" cy="230" r="5" fill="#805ad5"/>
+              <!-- Documents -->
+              <rect x="550" y="180" width="100" height="70" rx="8" fill="#ed8936" stroke="#dd6b20" stroke-width="2"/>
+              <text x="600" y="205" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="11" font-weight="bold">DOCUMENTS</text>
+              <text x="600" y="220" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="8">Text Files</text>
+              <text x="600" y="235" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="8">Vector Search</text>
 
-    <!-- Step labels -->
-    <text class="rag-label step-1-label" x="100" y="30" text-anchor="middle" fill="#4a5568" font-size="11" font-weight="bold">1. User Query</text>
-    <text class="rag-label step-2-label" x="350" y="450" text-anchor="middle" fill="#4a5568" font-size="11" font-weight="bold">2. Knowledge Retrieval</text>
-    <text class="rag-label step-3-label" x="400" y="150" text-anchor="middle" fill="#4a5568" font-size="11" font-weight="bold">3. Context Assembly</text>
-    <text class="rag-label step-4-label" x="700" y="30" text-anchor="middle" fill="#4a5568" font-size="11" font-weight="bold">4. Enhanced Response</text>
+              <!-- APIs -->
+              <rect x="550" y="280" width="100" height="70" rx="8" fill="#9f7aea" stroke="#805ad5" stroke-width="2"/>
+              <text x="600" y="305" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="11" font-weight="bold">APIs</text>
+              <text x="600" y="320" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="8">External Services</text>
+              <text x="600" y="335" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="8">Real-time Data</text>
 
-    <!-- Status indicator -->
-    <rect class="status-bg" x="300" y="120" width="200" height="25" rx="12" fill="#f7fafc" stroke="#e2e8f0" stroke-width="1"/>
-    <text class="status-text" x="400" y="137" text-anchor="middle" fill="#4a5568" font-size="11">Processing query...</text>
-  </svg>
+              <!-- Knowledge Base -->
+              <rect x="720" y="180" width="100" height="70" rx="8" fill="#38b2ac" stroke="#319795" stroke-width="2"/>
+              <text x="770" y="205" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="11" font-weight="bold">WIKI/KB</text>
+              <text x="770" y="220" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="8">Knowledge Base</text>
+              <text x="770" y="235" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="8">Documentation</text>
+            </g>
 
-  <div class="diagram-controls">
-    <button id="playRAGAnimation" class="diagram-btn">Play RAG Animation</button>
-    <button id="pauseRAGAnimation" class="diagram-btn" disabled>Pause</button>
-    <button id="resetRAGAnimation" class="diagram-btn">Reset</button>
-  </div>
-</div>
+            <!-- Final Response -->
+            <g class="final-response">
+              <rect x="50" y="370" width="180" height="80" rx="10" fill="#38a169" stroke="#2f855a" stroke-width="2"/>
+              <text x="140" y="395" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="12" font-weight="bold">ENHANCED RESPONSE</text>
+              <text x="140" y="415" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="9">Context + Generation</text>
+              <text x="140" y="430" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="9">"MCP is a protocol that..."</text>
+            </g>
 
-<h3>MCP-Enhanced RAG Implementation</h3>
-<div class="code-block">
-  <div class="ace-editor large" id="editor7">// RAG Server with multiple knowledge sources
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+            <!-- MCP Server Layer -->
+            <g class="mcp-layer">
+              <rect x="480" y="40" width="200" height="330" rx="15" fill="none" stroke="#4a5568" stroke-width="2" stroke-dasharray="5,5" opacity="0.7"/>
+              <text x="580" y="30" text-anchor="middle" fill="#4a5568" font-family="Arial, sans-serif" font-size="14" font-weight="bold">MCP SERVER LAYER</text>
+            </g>
 
-const ragServer = new Server({
-  name: 'rag-knowledge-server',
-  version: '1.0.0'
-});
+            <!-- Flow Arrows and Paths -->
+            <g class="flow-paths">
+              <!-- User to AI -->
+              <path d="M 170 90 Q 210 150 250 240" stroke="#e53e3e" stroke-width="3" fill="none" class="rag-path user-to-ai" opacity="0"/>
+              <polygon points="245,235 255,240 245,245" fill="#e53e3e" class="rag-arrow user-to-ai-arrow" opacity="0"/>
 
-// Vector database resource
-ragServer.setRequestHandler('resources/list', async () => {
-  return {
-    resources: [
-      {
-        uri: 'vector://embeddings/documents',
-        name: 'Document Embeddings',
-        description: 'Vectorized company documents',
-        mimeType: 'application/json'
+              <!-- AI to Knowledge Sources -->
+              <path d="M 390 220 L 550 115" stroke="#667eea" stroke-width="3" fill="none" class="rag-path ai-to-db" opacity="0"/>
+              <polygon points="545,120 555,115 550,110" fill="#667eea" class="rag-arrow ai-to-db-arrow" opacity="0"/>
+
+              <path d="M 390 240 L 550 215" stroke="#667eea" stroke-width="3" fill="none" class="rag-path ai-to-docs" opacity="0"/>
+              <polygon points="545,220 555,215 550,210" fill="#667eea" class="rag-arrow ai-to-docs-arrow" opacity="0"/>
+
+              <path d="M 390 260 L 550 315" stroke="#667eea" stroke-width="3" fill="none" class="rag-path ai-to-apis" opacity="0"/>
+              <polygon points="545,320 555,315 550,310" fill="#667eea" class="rag-arrow ai-to-apis-arrow" opacity="0"/>
+
+              <path d="M 390 230 L 720 215" stroke="#667eea" stroke-width="3" fill="none" class="rag-path ai-to-kb" opacity="0"/>
+              <polygon points="715,220 725,215 720,210" fill="#667eea" class="rag-arrow ai-to-kb-arrow" opacity="0"/>
+
+              <!-- Retrieved Data Back -->
+              <path d="M 550 130 Q 450 170 390 240" stroke="#48bb78" stroke-width="2" fill="none" class="rag-path db-return" opacity="0"/>
+              <path d="M 550 230 Q 470 240 390 250" stroke="#ed8936" stroke-width="2" fill="none" class="rag-path docs-return" opacity="0"/>
+              <path d="M 550 300 Q 450 280 390 260" stroke="#9f7aea" stroke-width="2" fill="none" class="rag-path apis-return" opacity="0"/>
+              <path d="M 720 230 Q 550 250 390 250" stroke="#38b2ac" stroke-width="2" fill="none" class="rag-path kb-return" opacity="0"/>
+
+              <!-- AI to Final Response -->
+              <path d="M 250 280 Q 200 330 140 370" stroke="#38a169" stroke-width="4" fill="none" class="rag-path ai-to-response" opacity="0"/>
+              <polygon points="145,365 140,375 135,365" fill="#38a169" class="rag-arrow ai-to-response-arrow" opacity="0"/>
+            </g>
+
+            <!-- Data Flow Indicators -->
+            <g class="data-flow">
+              <circle cx="170" cy="90" r="5" fill="#e53e3e" class="rag-dot user-query-dot" opacity="0"/>
+              <circle cx="550" cy="115" r="4" fill="#48bb78" class="rag-dot db-dot" opacity="0"/>
+              <circle cx="550" cy="215" r="4" fill="#ed8936" class="rag-dot docs-dot" opacity="0"/>
+              <circle cx="550" cy="315" r="4" fill="#9f7aea" class="rag-dot apis-dot" opacity="0"/>
+              <circle cx="720" cy="215" r="4" fill="#38b2ac" class="rag-dot kb-dot" opacity="0"/>
+              <circle cx="320" cy="250" r="6" fill="#f6e05e" class="rag-dot context-dot" opacity="0"/>
+            </g>
+
+            <!-- Step Labels -->
+            <g class="rag-step-labels">
+              <text x="210" y="120" text-anchor="middle" fill="#e53e3e" font-size="10" font-weight="bold" class="rag-label step-1-label" opacity="0">1. Query</text>
+              <text x="470" y="170" text-anchor="middle" fill="#667eea" font-size="10" font-weight="bold" class="rag-label step-2-label" opacity="0">2. Retrieve</text>
+              <text x="420" y="300" text-anchor="middle" fill="#48bb78" font-size="10" font-weight="bold" class="rag-label step-3-label" opacity="0">3. Context</text>
+              <text x="180" y="340" text-anchor="middle" fill="#38a169" font-size="10" font-weight="bold" class="rag-label step-4-label" opacity="0">4. Generate</text>
+            </g>
+
+            <!-- Process Status -->
+            <g class="process-status">
+              <rect x="300" y="400" width="300" height="40" rx="20" fill="#f7fafc" stroke="#e2e8f0" stroke-width="1" class="status-bg" opacity="0"/>
+              <text x="450" y="425" text-anchor="middle" fill="#4a5568" font-size="12" font-weight="bold" class="status-text" opacity="0">Processing...</text>
+            </g>
+          </svg>
+          
+          <div class="diagram-controls">
+            <button class="diagram-btn" id="playRAGAnimation">▶ Play RAG Flow</button>
+            <button class="diagram-btn" id="pauseRAGAnimation" disabled>⏸ Pause</button>
+            <button class="diagram-btn" id="resetRAGAnimation">↻ Reset</button>
+          </div>
+        </div>
+
+        <div class="code-block">
+          <div class="ace-editor large" id="editor10">// Document Search MCP Tool
+server.addTool({
+  name: "search_knowledge_base",
+  description: "Search through company knowledge base",
+  inputSchema: {
+    type: "object",
+    properties: {
+      query: { 
+        type: "string", 
+        description: "Search query for knowledge retrieval" 
       },
-      {
-        uri: 'sql://knowledge/database',
-        name: 'Knowledge Database',
-        description: 'Structured knowledge base',
-        mimeType: 'application/json'
+      sources: { 
+        type: "array", 
+        items: { type: "string" },
+        description: "Specific data sources to search"
+      },
+      limit: { 
+        type: "number", 
+        default: 10,
+        description: "Maximum number of results to return"
       }
-    ]
-  };
+    },
+    required: ["query"]
+  }
 });
 
-// RAG search tool
-ragServer.setRequestHandler('tools/call', async (request) => {
-  if (request.params.name === 'semantic_search') {
-    const { query, top_k = 5 } = request.params.arguments;
+// Vector Search Implementation
+server.setRequestHandler('tools/call', async (request) => {
+  if (request.params.name === "search_knowledge_base") {
+    const { query, sources, limit } = request.params.arguments;
     
-    // Perform semantic search across multiple sources
-    const vectorResults = await searchVectorDB(query, top_k);
-    const sqlResults = await searchKnowledgeDB(query);
-    const apiResults = await searchExternalAPIs(query);
+    // Perform semantic search across knowledge base
+    const results = await vectorSearch({
+      query: query,
+      sources: sources || ['documents', 'wiki', 'support'],
+      limit: limit,
+      threshold: 0.7
+    });
     
     return {
       content: [{
-        type: 'text',
+        type: "text",
         text: JSON.stringify({
-          results: [...vectorResults, ...sqlResults, ...apiResults],
-          context: combineContext(vectorResults, sqlResults, apiResults)
+          results: results,
+          metadata: {
+            total_found: results.length,
+            search_time_ms: Date.now() - startTime
+          }
         })
       }]
     };
   }
-});</div>
+});
 </div>
+        </div>
 
-<div class="highlight-box">
-  <h3>RAG Benefits with MCP</h3>
-  <p><strong>Modularity:</strong> Different knowledge sources can be separate MCP servers</p>
-  <p><strong>Standardization:</strong> Consistent interface for all retrieval operations</p>
-  <p><strong>Scalability:</strong> Easy to add new knowledge sources without changing client code</p>
-  <p><strong>Security:</strong> Granular access control per knowledge source</p>
+        <h3>Multi-Modal RAG</h3>
+        <p>MCP supports retrieval from various data types:</p>
+
+        <div class="code-block">
+          <div class="ace-editor" id="editor11">// Multi-modal data retrieval
+server.addTool({
+  name: "retrieve_multimodal_data",
+  description: "Retrieve text, images, and structured data",
+  inputSchema: {
+    type: "object",
+    properties: {
+      query: { type: "string" },
+      modalities: {
+        type: "array",
+        items: { 
+          type: "string",
+          enum: ["text", "image", "table", "code", "graph"]
+        }
+      }
+    }
+  }
+});
+
+// Database Integration for Structured RAG
+server.addTool({
+  name: "query_structured_data",
+  description: "Query relational data for RAG context",
+  inputSchema: {
+    type: "object",
+    properties: {
+      natural_query: { type: "string" },
+      tables: { type: "array", items: { type: "string" } },
+      join_conditions: { type: "string" }
+    }
+  }
+});
 </div>
+        </div>
 
-<button class="btn" onclick="markSectionComplete('rag')">Complete RAG Integration</button>
+        <div class="highlight-box">
+          <h3>RAG Best Practices with MCP</h3>
+          <p><strong>Chunk Strategy:</strong> Design optimal document chunking for your MCP resources</p>
+          <p><strong>Metadata Enrichment:</strong> Include source attribution and confidence scores</p>
+          <p><strong>Caching:</strong> Implement intelligent caching for frequently accessed data</p>
+          <p><strong>Fallback Handling:</strong> Graceful degradation when retrieval fails</p>
+        </div>
+
+        <h3>Real-world RAG Patterns</h3>
+
+        <div class="code-block">
+          <div class="ace-editor large" id="editor12">// Customer Support RAG System
+const supportRAG = {
+  // Search customer tickets and knowledge articles
+  searchSupport: async (query) => {
+    const tickets = await mcpClient.request('tools/call', {
+      name: 'search_tickets',
+      arguments: { query, status: 'resolved' }
+    });
+    
+    const articles = await mcpClient.request('tools/call', {
+      name: 'search_knowledge_articles', 
+      arguments: { query, category: 'technical' }
+    });
+    
+    return { tickets: tickets.result, articles: articles.result };
+  },
+  
+  // Code Documentation RAG
+  searchCodebase: async (query) => {
+    return await mcpClient.request('tools/call', {
+      name: 'search_codebase',
+      arguments: { 
+        query, 
+        file_types: ['.js', '.ts', '.py'],
+        include_tests: true 
+      }
+    });
+  }
+};
+
+// RAG Response Generation Flow
+async function generateRAGResponse(userQuery) {
+  // 1. Retrieve relevant context
+  const context = await Promise.all([
+    supportRAG.searchSupport(userQuery),
+    supportRAG.searchCodebase(userQuery)
+  ]);
+  
+  // 2. Format context for AI
+  const formattedContext = formatRetrievedContext(context);
+  
+  // 3. Generate response with context
+  const response = await anthropicClient.messages.create({
+    model: "claude-3-sonnet-20240229",
+    messages: [{
+      role: "user", 
+      content: `Context: ${formattedContext}\n\nQuery: ${userQuery}`
+    }]
+  });
+  
+  return response;
+}
+</div>
+        </div>
+
+        <button class="btn" onclick="markSectionComplete('rag')">Mark Complete</button>
+      
