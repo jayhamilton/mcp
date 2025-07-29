@@ -5,11 +5,10 @@ export class MCPAnimationManager {
   }
 
   initializeMCPAnimation() {
-    const playBtn = document.getElementById('playAnimation');
-    const pauseBtn = document.getElementById('pauseAnimation');
+    const toggleBtn = document.getElementById('toggleAnimation');
     const resetBtn = document.getElementById('resetAnimation');
 
-    if (!playBtn) return; // Diagram not loaded yet
+    if (!toggleBtn) return; // Diagram not loaded yet
 
     // Register GSAP plugins
     gsap.registerPlugin(MotionPathPlugin);
@@ -62,28 +61,23 @@ export class MCPAnimationManager {
         repeat: 1 
       }, '+=0.5');
 
-    // Button event handlers
-    playBtn.addEventListener('click', () => {
+    // Toggle button event handler
+    toggleBtn.addEventListener('click', () => {
       if (!this.isAnimationPlaying) {
         this.animationTimeline.play();
         this.isAnimationPlaying = true;
-        playBtn.disabled = true;
-        pauseBtn.disabled = false;
+        toggleBtn.textContent = '⏸ Pause Animation';
+      } else {
+        this.animationTimeline.pause();
+        this.isAnimationPlaying = false;
+        toggleBtn.textContent = '▶ Play Animation';
       }
-    });
-
-    pauseBtn.addEventListener('click', () => {
-      this.animationTimeline.pause();
-      this.isAnimationPlaying = false;
-      playBtn.disabled = false;
-      pauseBtn.disabled = true;
     });
 
     resetBtn.addEventListener('click', () => {
       this.animationTimeline.restart().pause();
       this.isAnimationPlaying = false;
-      playBtn.disabled = false;
-      pauseBtn.disabled = true;
+      toggleBtn.textContent = '▶ Play Animation';
       
       // Reset to initial state
       gsap.set(['.message-path', '.message-dot', '.message-text', '.step-circle', '.step-text'], { opacity: 0 });
@@ -95,8 +89,7 @@ export class MCPAnimationManager {
     // Auto-reset when animation completes
     this.animationTimeline.eventCallback("onComplete", () => {
       this.isAnimationPlaying = false;
-      playBtn.disabled = false;
-      pauseBtn.disabled = true;
+      toggleBtn.textContent = '▶ Play Animation';
     });
   }
 }

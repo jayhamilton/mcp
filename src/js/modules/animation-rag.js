@@ -7,11 +7,10 @@ export class RAGAnimationManager {
   }
 
   initializeRAGAnimation() {
-    const playBtn = document.getElementById('playRAGAnimation');
-    const pauseBtn = document.getElementById('pauseRAGAnimation');
+    const toggleBtn = document.getElementById('toggleRAGAnimation');
     const resetBtn = document.getElementById('resetRAGAnimation');
 
-    if (!playBtn) return; // RAG diagram not loaded yet
+    if (!toggleBtn) return; // RAG diagram not loaded yet
 
     // Create RAG animation timeline
     this.ragAnimationTimeline = gsap.timeline({ paused: true });
@@ -106,28 +105,23 @@ export class RAGAnimationManager {
         repeat: 1 
       }, '-=0.6');
 
-    // RAG Button event handlers
-    playBtn.addEventListener('click', () => {
+    // RAG Toggle button event handler
+    toggleBtn.addEventListener('click', () => {
       if (!this.isRAGAnimationPlaying) {
         this.ragAnimationTimeline.play();
         this.isRAGAnimationPlaying = true;
-        playBtn.disabled = true;
-        pauseBtn.disabled = false;
+        toggleBtn.textContent = '⏸ Pause RAG Flow';
+      } else {
+        this.ragAnimationTimeline.pause();
+        this.isRAGAnimationPlaying = false;
+        toggleBtn.textContent = '▶ Play RAG Flow';
       }
-    });
-
-    pauseBtn.addEventListener('click', () => {
-      this.ragAnimationTimeline.pause();
-      this.isRAGAnimationPlaying = false;
-      playBtn.disabled = false;
-      pauseBtn.disabled = true;
     });
 
     resetBtn.addEventListener('click', () => {
       this.ragAnimationTimeline.restart().pause();
       this.isRAGAnimationPlaying = false;
-      playBtn.disabled = false;
-      pauseBtn.disabled = true;
+      toggleBtn.textContent = '▶ Play RAG Flow';
       
       // Reset to initial state
       gsap.set(['.rag-path', '.rag-arrow', '.rag-dot', '.rag-label', '.status-bg', '.status-text'], { opacity: 0 });
@@ -138,8 +132,7 @@ export class RAGAnimationManager {
     // Auto-reset when RAG animation completes
     this.ragAnimationTimeline.eventCallback("onComplete", () => {
       this.isRAGAnimationPlaying = false;
-      playBtn.disabled = false;
-      pauseBtn.disabled = true;
+      toggleBtn.textContent = '▶ Play RAG Flow';
     });
   }
 }
