@@ -112,10 +112,10 @@ body {
   left: -2px;
   right: -2px;
   bottom: -2px;
-  background: linear-gradient(45deg, #48bb78, #38a169, #2f855a, #48bb78);
+  background: linear-gradient(15deg, #48bb78, #38a169, #4aab7a, #48bb78);
   border-radius: 27px;
   z-index: -1;
-  animation: borderGlow 2s linear infinite;
+  animation: borderGlow 25s linear infinite;
 }
 
 @keyframes borderGlow {
