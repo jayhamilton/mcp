@@ -2,7 +2,7 @@
 export class ContentLoader {
   constructor() {
     this.contentCache = new Map();
-    this.sectionIds = ['overview', 'jsonrpc', 'architecture', 'implementation', 'rag', 'quiz', 'resources'];
+    this.sectionIds = ['overview', 'jsonrpc', 'architecture', 'implementation', 'rag', 'rag-vector', 'quiz', 'resources'];
   }
 
   async loadAllSections() {

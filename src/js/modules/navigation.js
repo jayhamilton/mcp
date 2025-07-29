@@ -18,17 +18,21 @@ export class NavigationManager {
 
     // Show selected section with fade in
     const targetSection = document.getElementById(sectionId);
-    targetSection.classList.add('active');
+    if (targetSection) {
+      targetSection.classList.add('active');
+    }
 
-    // Add active class to clicked button with enhanced animation
-    const clickedButton = event.target;
-    clickedButton.classList.add('active');
-    
-    // Add a brief highlight effect
-    clickedButton.style.transform = 'translateY(-3px) scale(1.02)';
-    setTimeout(() => {
-      clickedButton.style.transform = '';
-    }, 200);
+    // Find and activate the correct nav button
+    const clickedButton = document.querySelector(`[onclick="showSection('${sectionId}')"]`);
+    if (clickedButton) {
+      clickedButton.classList.add('active');
+      
+      // Add a brief highlight effect
+      clickedButton.style.transform = 'translateY(-3px) scale(1.02)';
+      setTimeout(() => {
+        clickedButton.style.transform = '';
+      }, 200);
+    }
 
     this.updateProgress();
   }
@@ -51,25 +55,27 @@ export class NavigationManager {
     this.updateProgress();
 
     // Show success message on the completion button
-    const btn = event.target;
-    const originalText = btn.textContent;
-    const originalBackground = btn.style.background;
-    
-    btn.textContent = 'Completed! ✓';
-    btn.style.background = 'linear-gradient(135deg, #48bb78, #38a169)';
-    btn.style.transform = 'scale(1.05)';
-    btn.style.boxShadow = '0 8px 25px rgba(72, 187, 120, 0.4)';
+    if (typeof event !== 'undefined' && event.target) {
+      const btn = event.target;
+      const originalText = btn.textContent;
+      const originalBackground = btn.style.background;
+      
+      btn.textContent = 'Completed! ✓';
+      btn.style.background = 'linear-gradient(135deg, #48bb78, #38a169)';
+      btn.style.transform = 'scale(1.05)';
+      btn.style.boxShadow = '0 8px 25px rgba(72, 187, 120, 0.4)';
 
-    setTimeout(() => {
-      btn.textContent = originalText;
-      btn.style.background = originalBackground;
-      btn.style.transform = '';
-      btn.style.boxShadow = '';
-    }, 2500);
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = originalBackground;
+        btn.style.transform = '';
+        btn.style.boxShadow = '';
+      }, 2500);
+    }
   }
 
   updateProgress() {
-    const totalSections = 7;
+    const totalSections = 8;
     const progress = (this.completedSections.size / totalSections) * 100;
     document.getElementById('progressFill').style.width = progress + '%';
   }

@@ -1,0 +1,757 @@
+<h2 class="section-title">RAG with Vector Embeddings</h2>
+
+<div class="learning-objectives">
+  <h3>Learning Objectives</h3>
+  <ul>
+    <li>Understand the complete RAG pipeline from document processing to response generation</li>
+    <li>Learn about text chunking strategies and embedding generation</li>
+    <li>Explore vector databases and similarity search mechanisms</li>
+    <li>Implement MCP servers for vector-based RAG systems</li>
+  </ul>
+</div>
+
+<h3>Vector-Based RAG Overview</h3>
+<p>Vector-based Retrieval Augmented Generation represents the state-of-the-art approach to building intelligent knowledge systems. This process transforms documents into numerical embeddings, stores them in vector databases, and enables semantic search for contextually relevant information retrieval.</p>
+
+<div class="highlight-box">
+  <h3>Key Components</h3>
+  <p><strong>Document Processing:</strong> Text extraction, cleaning, and preprocessing</p>
+  <p><strong>Chunking Strategy:</strong> Breaking documents into optimal-sized pieces for embedding</p>
+  <p><strong>Embedding Generation:</strong> Converting text chunks into high-dimensional vectors</p>
+  <p><strong>Vector Storage:</strong> Indexing and storing embeddings in specialized databases</p>
+  <p><strong>Semantic Search:</strong> Finding similar content using vector similarity metrics</p>
+</div>
+
+<h3>High-Level RAG Architecture</h3>
+<p>The following diagram shows the complete RAG pipeline with vector embeddings:</p>
+
+<div class="diagram-container">
+  <h4>Vector RAG Pipeline</h4>
+  <svg class="communication-diagram" viewBox="0 0 1200 600" xmlns="http://www.w3.org/2000/svg" id="ragBlockDiagram">
+    <!-- Background -->
+    <rect width="1200" height="600" fill="#ffffff" rx="10"/>
+    
+    <!-- Phase 1: Document Processing -->
+    <g class="processing-phase">
+      <rect x="50" y="50" width="250" height="150" rx="10" fill="#f8f9fa" stroke="#e9ecef" stroke-width="2" class="phase-bg processing-bg"/>
+      <text x="175" y="35" text-anchor="middle" fill="#495057" font-size="14" font-weight="bold">DOCUMENT PROCESSING</text>
+      
+      <!-- Data Sources -->
+      <rect x="70" y="70" width="80" height="40" rx="5" fill="#fd7e14" stroke="#e8590c" stroke-width="2" class="component docs-source"/>
+      <text x="110" y="90" text-anchor="middle" fill="white" font-size="10" font-weight="bold">DOCUMENTS</text>
+      <text x="110" y="102" text-anchor="middle" fill="white" font-size="8">PDFs, Text</text>
+      
+      <!-- Text Extraction -->
+      <rect x="170" y="70" width="80" height="40" rx="5" fill="#6f42c1" stroke="#5a2d91" stroke-width="2" class="component extraction"/>
+      <text x="210" y="90" text-anchor="middle" fill="white" font-size="10" font-weight="bold">EXTRACTION</text>
+      <text x="210" y="102" text-anchor="middle" fill="white" font-size="8">Clean & Parse</text>
+      
+      <!-- Chunking -->
+      <rect x="120" y="130" width="80" height="40" rx="5" fill="#198754" stroke="#157347" stroke-width="2" class="component chunking"/>
+      <text x="160" y="150" text-anchor="middle" fill="white" font-size="10" font-weight="bold">CHUNKING</text>
+      <text x="160" y="162" text-anchor="middle" fill="white" font-size="8">512-2048 tokens</text>
+    </g>
+    
+    <!-- Phase 2: Embedding & Storage -->
+    <g class="embedding-phase">
+      <rect x="350" y="50" width="250" height="150" rx="10" fill="#f8f9fa" stroke="#e9ecef" stroke-width="2" class="phase-bg embedding-bg"/>
+      <text x="475" y="35" text-anchor="middle" fill="#495057" font-size="14" font-weight="bold">EMBEDDING & STORAGE</text>
+      
+      <!-- Embedding Model -->
+      <rect x="370" y="70" width="80" height="40" rx="5" fill="#0d6efd" stroke="#0b5ed7" stroke-width="2" class="component embedding-model"/>
+      <text x="410" y="90" text-anchor="middle" fill="white" font-size="10" font-weight="bold">EMBEDDING</text>
+      <text x="410" y="102" text-anchor="middle" fill="white" font-size="8">OpenAI/HF</text>
+      
+      <!-- Vector Database -->
+      <rect x="470" y="70" width="80" height="40" rx="5" fill="#6610f2" stroke="#520dc2" stroke-width="2" class="component vector-db"/>
+      <text x="510" y="90" text-anchor="middle" fill="white" font-size="10" font-weight="bold">VECTOR DB</text>
+      <text x="510" y="102" text-anchor="middle" fill="white" font-size="8">Pinecone/Weaviate</text>
+      
+      <!-- Index -->
+      <rect x="420" y="130" width="80" height="40" rx="5" fill="#d63384" stroke="#b02a5b" stroke-width="2" class="component indexing"/>
+      <text x="460" y="150" text-anchor="middle" fill="white" font-size="10" font-weight="bold">INDEXING</text>
+      <text x="460" y="162" text-anchor="middle" fill="white" font-size="8">FAISS/HNSW</text>
+    </g>
+    
+    <!-- Phase 3: Query Processing -->
+    <g class="query-phase">
+      <rect x="650" y="50" width="250" height="150" rx="10" fill="#f8f9fa" stroke="#e9ecef" stroke-width="2" class="phase-bg query-bg"/>
+      <text x="775" y="35" text-anchor="middle" fill="#495057" font-size="14" font-weight="bold">QUERY PROCESSING</text>
+      
+      <!-- User Query -->
+      <rect x="670" y="70" width="80" height="40" rx="5" fill="#20c997" stroke="#1aa179" stroke-width="2" class="component user-query"/>
+      <text x="710" y="90" text-anchor="middle" fill="white" font-size="10" font-weight="bold">USER QUERY</text>
+      <text x="710" y="102" text-anchor="middle" fill="white" font-size="8">"Explain MCP"</text>
+      
+      <!-- Query Embedding -->
+      <rect x="770" y="70" width="80" height="40" rx="5" fill="#0dcaf0" stroke="#0aa1c9" stroke-width="2" class="component query-embedding"/>
+      <text x="810" y="90" text-anchor="middle" fill="white" font-size="10" font-weight="bold">EMBED QUERY</text>
+      <text x="810" y="102" text-anchor="middle" fill="white" font-size="8">Vector</text>
+      
+      <!-- Similarity Search -->
+      <rect x="720" y="130" width="80" height="40" rx="5" fill="#6f42c1" stroke="#5a2d91" stroke-width="2" class="component similarity-search"/>
+      <text x="760" y="150" text-anchor="middle" fill="white" font-size="10" font-weight="bold">SIMILARITY</text>
+      <text x="760" y="162" text-anchor="middle" fill="white" font-size="8">Cosine/Dot</text>
+    </g>
+    
+    <!-- Phase 4: Response Generation -->
+    <g class="response-phase">
+      <rect x="950" y="50" width="200" height="150" rx="10" fill="#f8f9fa" stroke="#e9ecef" stroke-width="2" class="phase-bg response-bg"/>
+      <text x="1050" y="35" text-anchor="middle" fill="#495057" font-size="14" font-weight="bold">RESPONSE GENERATION</text>
+      
+      <!-- Context Assembly -->
+      <rect x="970" y="70" width="80" height="40" rx="5" fill="#198754" stroke="#157347" stroke-width="2" class="component context-assembly"/>
+      <text x="1010" y="90" text-anchor="middle" fill="white" font-size="10" font-weight="bold">CONTEXT</text>
+      <text x="1010" y="102" text-anchor="middle" fill="white" font-size="8">Top-K chunks</text>
+      
+      <!-- LLM -->
+      <rect x="1070" y="70" width="60" height="40" rx="5" fill="#dc3545" stroke="#bb2d3b" stroke-width="2" class="component llm"/>
+      <text x="1100" y="90" text-anchor="middle" fill="white" font-size="10" font-weight="bold">LLM</text>
+      <text x="1100" y="102" text-anchor="middle" fill="white" font-size="8">Claude</text>
+      
+      <!-- Enhanced Response -->
+      <rect x="1020" y="130" width="80" height="40" rx="5" fill="#fd7e14" stroke="#e8590c" stroke-width="2" class="component enhanced-response"/>
+      <text x="1060" y="150" text-anchor="middle" fill="white" font-size="10" font-weight="bold">RESPONSE</text>
+      <text x="1060" y="162" text-anchor="middle" fill="white" font-size="8">Enhanced</text>
+    </g>
+    
+    <!-- Data Flow Arrows -->
+    <g class="data-flow-arrows">
+      <!-- Processing flow -->
+      <path d="M 150 90 L 165 90" stroke="#495057" stroke-width="2" fill="none" class="flow-arrow proc-1" opacity="0"/>
+      <polygon points="163,87 170,90 163,93" fill="#495057" class="arrow-head proc-1" opacity="0"/>
+      
+      <path d="M 175 110 L 175 125" stroke="#495057" stroke-width="2" fill="none" class="flow-arrow proc-2" opacity="0"/>
+      <polygon points="172,123 175,130 178,123" fill="#495057" class="arrow-head proc-2" opacity="0"/>
+      
+      <!-- To embedding -->
+      <path d="M 300 150 L 365 90" stroke="#495057" stroke-width="2" fill="none" class="flow-arrow embed-1" opacity="0"/>
+      <polygon points="360,93 367,87 365,96" fill="#495057" class="arrow-head embed-1" opacity="0"/>
+      
+      <path d="M 450 90 L 465 90" stroke="#495057" stroke-width="2" fill="none" class="flow-arrow embed-2" opacity="0"/>
+      <polygon points="463,87 470,90 463,93" fill="#495057" class="arrow-head embed-2" opacity="0"/>
+      
+      <path d="M 475 110 L 475 125" stroke="#495057" stroke-width="2" fill="none" class="flow-arrow embed-3" opacity="0"/>
+      <polygon points="472,123 475,130 478,123" fill="#495057" class="arrow-head embed-3" opacity="0"/>
+      
+      <!-- Query flow -->
+      <path d="M 750 90 L 765 90" stroke="#20c997" stroke-width="3" fill="none" class="flow-arrow query-1" opacity="0"/>
+      <polygon points="763,87 770,90 763,93" fill="#20c997" class="arrow-head query-1" opacity="0"/>
+      
+      <!-- Similarity search -->
+      <path d="M 600 150 L 715 150" stroke="#6f42c1" stroke-width="3" fill="none" class="flow-arrow search-1" opacity="0"/>
+      <polygon points="713,147 720,150 713,153" fill="#6f42c1" class="arrow-head search-1" opacity="0"/>
+      
+      <path d="M 775 110 L 775 125" stroke="#0dcaf0" stroke-width="2" fill="none" class="flow-arrow search-2" opacity="0"/>
+      <polygon points="772,123 775,130 778,123" fill="#0dcaf0" class="arrow-head search-2" opacity="0"/>
+      
+      <!-- To response -->
+      <path d="M 900 150 L 965 90" stroke="#198754" stroke-width="3" fill="none" class="flow-arrow resp-1" opacity="0"/>
+      <polygon points="960,93 967,87 965,96" fill="#198754" class="arrow-head resp-1" opacity="0"/>
+      
+      <path d="M 1050 90 L 1065 90" stroke="#dc3545" stroke-width="2" fill="none" class="flow-arrow resp-2" opacity="0"/>
+      <polygon points="1063,87 1070,90 1063,93" fill="#dc3545" class="arrow-head resp-2" opacity="0"/>
+      
+      <path d="M 1075 110 L 1075 125" stroke="#dc3545" stroke-width="2" fill="none" class="flow-arrow resp-3" opacity="0"/>
+      <polygon points="1072,123 1075,130 1078,123" fill="#dc3545" class="arrow-head resp-3" opacity="0"/>
+    </g>
+    
+    <!-- Configuration Panel -->
+    <g class="config-panel">
+      <rect x="50" y="250" width="300" height="120" rx="10" fill="#e9ecef" stroke="#adb5bd" stroke-width="2" class="config-bg"/>
+      <text x="200" y="275" text-anchor="middle" fill="#495057" font-size="14" font-weight="bold">CONFIGURATION</text>
+      
+      <text x="70" y="295" fill="#495057" font-size="10">Chunk Size:</text>
+      <rect x="140" y="285" width="60" height="20" rx="3" fill="#0d6efd" stroke="#0b5ed7" stroke-width="1" class="config-chunk"/>
+      <text x="170" y="298" text-anchor="middle" fill="white" font-size="9">1024 tokens</text>
+      
+      <text x="70" y="315" fill="#495057" font-size="10">Embedding Model:</text>
+      <rect x="160" y="305" width="100" height="20" rx="3" fill="#6610f2" stroke="#520dc2" stroke-width="1" class="config-model"/>
+      <text x="210" y="318" text-anchor="middle" fill="white" font-size="9">text-embedding-3-small</text>
+      
+      <text x="70" y="335" fill="#495057" font-size="10">Similarity Threshold:</text>
+      <rect x="180" y="325" width="40" height="20" rx="3" fill="#20c997" stroke="#1aa179" stroke-width="1" class="config-threshold"/>
+      <text x="200" y="338" text-anchor="middle" fill="white" font-size="9">0.75</text>
+      
+      <text x="70" y="355" fill="#495057" font-size="10">Top-K Results:</text>
+      <rect x="140" y="345" width="30" height="20" rx="3" fill="#fd7e14" stroke="#e8590c" stroke-width="1" class="config-topk"/>
+      <text x="155" y="358" text-anchor="middle" fill="white" font-size="9">5</text>
+    </g>
+    
+    <!-- Status Indicators -->
+    <g class="status-indicators">
+      <circle cx="175" cy="220" r="8" fill="#28a745" class="status-dot processing-status" opacity="0"/>
+      <text x="190" y="225" fill="#495057" font-size="10" class="status-text processing-text" opacity="0">Processing...</text>
+      
+      <circle cx="475" cy="220" r="8" fill="#17a2b8" class="status-dot embedding-status" opacity="0"/>
+      <text x="490" y="225" fill="#495057" font-size="10" class="status-text embedding-text" opacity="0">Embedding...</text>
+      
+      <circle cx="775" cy="220" r="8" fill="#ffc107" class="status-dot query-status" opacity="0"/>
+      <text x="790" y="225" fill="#495057" font-size="10" class="status-text query-text" opacity="0">Searching...</text>
+      
+      <circle cx="1050" cy="220" r="8" fill="#dc3545" class="status-dot response-status" opacity="0"/>
+      <text x="1065" y="225" fill="#495057" font-size="10" class="status-text response-text" opacity="0">Generating...</text>
+    </g>
+  </svg>
+  
+  <div class="diagram-controls">
+    <button class="diagram-btn" id="toggleBlockAnimation">▶ Play Block Diagram</button>
+    <button class="diagram-btn" id="resetBlockAnimation">↻ Reset</button>
+  </div>
+</div>
+
+<h3>RAG Sequence Flow</h3>
+<p>The following sequence diagram shows the temporal flow of the RAG process:</p>
+
+<div class="diagram-container">
+  <h4>RAG Process Timeline</h4>
+  <svg class="communication-diagram" viewBox="0 0 1000 800" xmlns="http://www.w3.org/2000/svg" id="ragSequenceDiagram">
+    <!-- Background -->
+    <rect width="1000" height="800" fill="#ffffff" rx="10"/>
+    
+    <!-- Timeline Actors -->
+    <g class="timeline-actors">
+      <!-- User -->
+      <rect x="50" y="50" width="80" height="40" rx="5" fill="#20c997" stroke="#1aa179" stroke-width="2"/>
+      <text x="90" y="75" text-anchor="middle" fill="white" font-size="12" font-weight="bold">USER</text>
+      <line x1="90" y1="90" x2="90" y2="750" stroke="#adb5bd" stroke-width="2" stroke-dasharray="5,5"/>
+      
+      <!-- MCP Client -->
+      <rect x="180" y="50" width="80" height="40" rx="5" fill="#0d6efd" stroke="#0b5ed7" stroke-width="2"/>
+      <text x="220" y="75" text-anchor="middle" fill="white" font-size="12" font-weight="bold">MCP CLIENT</text>
+      <line x1="220" y1="90" x2="220" y2="750" stroke="#adb5bd" stroke-width="2" stroke-dasharray="5,5"/>
+      
+      <!-- Document Processor -->
+      <rect x="310" y="50" width="80" height="40" rx="5" fill="#fd7e14" stroke="#e8590c" stroke-width="2"/>
+      <text x="350" y="70" text-anchor="middle" fill="white" font-size="10" font-weight="bold">DOC</text>
+      <text x="350" y="82" text-anchor="middle" fill="white" font-size="10" font-weight="bold">PROCESSOR</text>
+      <line x1="350" y1="90" x2="350" y2="750" stroke="#adb5bd" stroke-width="2" stroke-dasharray="5,5"/>
+      
+      <!-- Embedding Service -->
+      <rect x="440" y="50" width="80" height="40" rx="5" fill="#6610f2" stroke="#520dc2" stroke-width="2"/>
+      <text x="480" y="70" text-anchor="middle" fill="white" font-size="10" font-weight="bold">EMBEDDING</text>
+      <text x="480" y="82" text-anchor="middle" fill="white" font-size="10" font-weight="bold">SERVICE</text>
+      <line x1="480" y1="90" x2="480" y2="750" stroke="#adb5bd" stroke-width="2" stroke-dasharray="5,5"/>
+      
+      <!-- Vector DB -->
+      <rect x="570" y="50" width="80" height="40" rx="5" fill="#6f42c1" stroke="#5a2d91" stroke-width="2"/>
+      <text x="610" y="70" text-anchor="middle" fill="white" font-size="10" font-weight="bold">VECTOR</text>
+      <text x="610" y="82" text-anchor="middle" fill="white" font-size="10" font-weight="bold">DATABASE</text>
+      <line x1="610" y1="90" x2="610" y2="750" stroke="#adb5bd" stroke-width="2" stroke-dasharray="5,5"/>
+      
+      <!-- Search Engine -->
+      <rect x="700" y="50" width="80" height="40" rx="5" fill="#198754" stroke="#157347" stroke-width="2"/>
+      <text x="740" y="70" text-anchor="middle" fill="white" font-size="10" font-weight="bold">SEARCH</text>
+      <text x="740" y="82" text-anchor="middle" fill="white" font-size="10" font-weight="bold">ENGINE</text>
+      <line x1="740" y1="90" x2="740" y2="750" stroke="#adb5bd" stroke-width="2" stroke-dasharray="5,5"/>
+      
+      <!-- LLM -->
+      <rect x="830" y="50" width="80" height="40" rx="5" fill="#dc3545" stroke="#bb2d3b" stroke-width="2"/>
+      <text x="870" y="75" text-anchor="middle" fill="white" font-size="12" font-weight="bold">LLM</text>
+      <line x1="870" y1="90" x2="870" y2="750" stroke="#adb5bd" stroke-width="2" stroke-dasharray="5,5"/>
+    </g>
+    
+    <!-- Phase Labels -->
+    <g class="phase-labels">
+      <rect x="20" y="120" width="120" height="25" rx="12" fill="#e9ecef" stroke="#adb5bd" stroke-width="1"/>
+      <text x="80" y="137" text-anchor="middle" fill="#495057" font-size="12" font-weight="bold">SETUP PHASE</text>
+      
+      <rect x="20" y="420" width="120" height="25" rx="12" fill="#d4edda" stroke="#c3e6cb" stroke-width="1"/>
+      <text x="80" y="437" text-anchor="middle" fill="#155724" font-size="12" font-weight="bold">QUERY PHASE</text>
+    </g>
+    
+    <!-- Setup Phase Interactions -->
+    <g class="setup-interactions">
+      <!-- 1. Upload Documents -->
+      <line x1="90" y1="160" x2="350" y2="160" stroke="#fd7e14" stroke-width="2" class="seq-arrow setup-1" opacity="0"/>
+      <polygon points="345,157 352,160 345,163" fill="#fd7e14" class="seq-arrow setup-1" opacity="0"/>
+      <text x="220" y="155" text-anchor="middle" fill="#fd7e14" font-size="10" class="seq-label setup-1" opacity="0">1. Upload Documents</text>
+      
+      <!-- 2. Extract & Clean -->
+      <rect x="330" y="170" width="40" height="20" rx="3" fill="#fd7e14" class="seq-process setup-2" opacity="0"/>
+      <text x="350" y="183" text-anchor="middle" fill="white" font-size="8" class="seq-process setup-2" opacity="0">Process</text>
+      
+      <!-- 3. Chunk Text -->
+      <line x1="350" y1="200" x2="350" y2="220" stroke="#198754" stroke-width="2" class="seq-arrow setup-3" opacity="0"/>
+      <text x="365" y="210" fill="#198754" font-size="10" class="seq-label setup-3" opacity="0">3. Chunk (1024 tokens)</text>
+      
+      <!-- 4. Generate Embeddings -->
+      <line x1="350" y1="240" x2="480" y2="240" stroke="#6610f2" stroke-width="2" class="seq-arrow setup-4" opacity="0"/>
+      <polygon points="475,237 482,240 475,243" fill="#6610f2" class="seq-arrow setup-4" opacity="0"/>
+      <text x="415" y="235" text-anchor="middle" fill="#6610f2" font-size="10" class="seq-label setup-4" opacity="0">4. Generate Embeddings</text>
+      
+      <!-- 5. Embedding Process -->
+      <rect x="460" y="250" width="40" height="20" rx="3" fill="#6610f2" class="seq-process setup-5" opacity="0"/>
+      <text x="480" y="263" text-anchor="middle" fill="white" font-size="8" class="seq-process setup-5" opacity="0">Embed</text>
+      
+      <!-- 6. Store Vectors -->
+      <line x1="480" y1="280" x2="610" y2="280" stroke="#6f42c1" stroke-width="2" class="seq-arrow setup-6" opacity="0"/>
+      <polygon points="605,277 612,280 605,283" fill="#6f42c1" class="seq-arrow setup-6" opacity="0"/>
+      <text x="545" y="275" text-anchor="middle" fill="#6f42c1" font-size="10" class="seq-label setup-6" opacity="0">6. Store Vectors</text>
+      
+      <!-- 7. Index Creation -->
+      <rect x="590" y="290" width="40" height="20" rx="3" fill="#6f42c1" class="seq-process setup-7" opacity="0"/>
+      <text x="610" y="303" text-anchor="middle" fill="white" font-size="8" class="seq-process setup-7" opacity="0">Index</text>
+      
+      <!-- 8. Setup Complete -->
+      <line x1="610" y1="320" x2="90" y2="320" stroke="#28a745" stroke-width="2" stroke-dasharray="5,5" class="seq-arrow setup-8" opacity="0"/>
+      <polygon points="95,317 88,320 95,323" fill="#28a745" class="seq-arrow setup-8" opacity="0"/>
+      <text x="350" y="315" text-anchor="middle" fill="#28a745" font-size="10" class="seq-label setup-8" opacity="0">8. Setup Complete</text>
+    </g>
+    
+    <!-- Query Phase Interactions -->
+    <g class="query-interactions">
+      <!-- 1. User Query -->
+      <line x1="90" y1="460" x2="220" y2="460" stroke="#20c997" stroke-width="3" class="seq-arrow query-1" opacity="0"/>
+      <polygon points="215,457 222,460 215,463" fill="#20c997" class="seq-arrow query-1" opacity="0"/>
+      <text x="155" y="455" text-anchor="middle" fill="#20c997" font-size="10" class="seq-label query-1" opacity="0">1. "Explain MCP"</text>
+      
+      <!-- 2. Embed Query -->
+      <line x1="220" y1="480" x2="480" y2="480" stroke="#0d6efd" stroke-width="2" class="seq-arrow query-2" opacity="0"/>
+      <polygon points="475,477 482,480 475,483" fill="#0d6efd" class="seq-arrow query-2" opacity="0"/>
+      <text x="350" y="475" text-anchor="middle" fill="#0d6efd" font-size="10" class="seq-label query-2" opacity="0">2. Embed Query</text>
+      
+      <!-- 3. Query Embedding Process -->
+      <rect x="460" y="490" width="40" height="20" rx="3" fill="#0d6efd" class="seq-process query-3" opacity="0"/>
+      <text x="480" y="503" text-anchor="middle" fill="white" font-size="8" class="seq-process query-3" opacity="0">Vector</text>
+      
+      <!-- 4. Search Similar -->
+      <line x1="480" y1="520" x2="740" y2="520" stroke="#198754" stroke-width="2" class="seq-arrow query-4" opacity="0"/>
+      <polygon points="735,517 742,520 735,523" fill="#198754" class="seq-arrow query-4" opacity="0"/>
+      <text x="610" y="515" text-anchor="middle" fill="#198754" font-size="10" class="seq-label query-4" opacity="0">4. Search Similar Vectors</text>
+      
+      <!-- 5. Vector Search -->
+      <line x1="740" y1="540" x2="610" y2="540" stroke="#6f42c1" stroke-width="2" class="seq-arrow query-5" opacity="0"/>
+      <polygon points="615,537 608,540 615,543" fill="#6f42c1" class="seq-arrow query-5" opacity="0"/>
+      <text x="675" y="535" text-anchor="middle" fill="#6f42c1" font-size="10" class="seq-label query-5" opacity="0">5. Query Vector DB</text>
+      
+      <!-- 6. Return Results -->
+      <line x1="610" y1="560" x2="740" y2="560" stroke="#6f42c1" stroke-width="2" stroke-dasharray="5,5" class="seq-arrow query-6" opacity="0"/>
+      <polygon points="735,557 742,560 735,563" fill="#6f42c1" class="seq-arrow query-6" opacity="0"/>
+      <text x="675" y="555" text-anchor="middle" fill="#6f42c1" font-size="10" class="seq-label query-6" opacity="0">6. Top-K Results</text>
+      
+      <!-- 7. Format Context -->
+      <line x1="740" y1="580" x2="220" y2="580" stroke="#198754" stroke-width="2" class="seq-arrow query-7" opacity="0"/>
+      <polygon points="225,577 218,580 225,583" fill="#198754" class="seq-arrow query-7" opacity="0"/>
+      <text x="480" y="575" text-anchor="middle" fill="#198754" font-size="10" class="seq-label query-7" opacity="0">7. Format Context</text>
+      
+      <!-- 8. Send to LLM -->
+      <line x1="220" y1="600" x2="870" y2="600" stroke="#dc3545" stroke-width="3" class="seq-arrow query-8" opacity="0"/>
+      <polygon points="865,597 872,600 865,603" fill="#dc3545" class="seq-arrow query-8" opacity="0"/>
+      <text x="545" y="595" text-anchor="middle" fill="#dc3545" font-size="10" class="seq-label query-8" opacity="0">8. Context + Query → LLM</text>
+      
+      <!-- 9. Generate Response -->
+      <rect x="850" y="610" width="40" height="20" rx="3" fill="#dc3545" class="seq-process query-9" opacity="0"/>
+      <text x="870" y="623" text-anchor="middle" fill="white" font-size="8" class="seq-process query-9" opacity="0">Generate</text>
+      
+      <!-- 10. Return Response -->
+      <line x1="870" y1="640" x2="90" y2="640" stroke="#28a745" stroke-width="3" stroke-dasharray="5,5" class="seq-arrow query-10" opacity="0"/>
+      <polygon points="95,637 88,640 95,643" fill="#28a745" class="seq-arrow query-10" opacity="0"/>
+      <text x="480" y="635" text-anchor="middle" fill="#28a745" font-size="10" class="seq-label query-10" opacity="0">10. Enhanced Response</text>
+    </g>
+    
+    <!-- Timing Labels -->
+    <g class="timing-labels">
+      <text x="950" y="180" fill="#6c757d" font-size="9">~30-60s</text>
+      <text x="950" y="200" fill="#6c757d" font-size="8">(one-time setup)</text>
+      
+      <text x="950" y="500" fill="#6c757d" font-size="9">~200-500ms</text>
+      <text x="950" y="520" fill="#6c757d" font-size="8">(per query)</text>
+    </g>
+  </svg>
+  
+  <div class="diagram-controls">
+    <button class="diagram-btn" id="toggleSequenceAnimation">▶ Play Sequence</button>
+    <button class="diagram-btn" id="resetSequenceAnimation">↻ Reset</button>
+  </div>
+</div>
+
+<div class="code-block">
+  <div class="ace-editor large" id="editor13">// Vector RAG MCP Server Implementation
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { OpenAI } from "openai";
+import { Pinecone } from "@pinecone-database/pinecone";
+
+class VectorRAGServer {
+  constructor() {
+    this.server = new Server({
+      name: "vector-rag-server",
+      version: "1.0.0"
+    }, {
+      capabilities: {
+        tools: {},
+        resources: {}
+      }
+    });
+    
+    this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    this.pinecone = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
+    this.index = this.pinecone.index("knowledge-base");
+    
+    this.setupTools();
+  }
+
+  setupTools() {
+    // Document Processing Tool
+    this.server.setRequestHandler('tools/call', async (request) => {
+      const { name, arguments: args } = request.params;
+      
+      switch (name) {
+        case "process_documents":
+          return await this.processDocuments(args);
+        case "vector_search":
+          return await this.vectorSearch(args);
+        case "rag_query":
+          return await this.ragQuery(args);
+        default:
+          throw new Error(`Unknown tool: ${name}`);
+      }
+    });
+    
+    // Document Processing Tool Definition
+    this.server.addTool({
+      name: "process_documents",
+      description: "Process documents into vector embeddings",
+      inputSchema: {
+        type: "object",
+        properties: {
+          documents: {
+            type: "array",
+            items: { type: "string" },
+            description: "Documents to process"
+          },
+          chunkSize: {
+            type: "number",
+            default: 1024,
+            description: "Token size for text chunks"
+          },
+          overlap: {
+            type: "number", 
+            default: 128,
+            description: "Overlap between chunks"
+          }
+        },
+        required: ["documents"]
+      }
+    });
+    
+    // Vector Search Tool
+    this.server.addTool({
+      name: "vector_search",
+      description: "Search for similar content using vector similarity",
+      inputSchema: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "Search query text"
+          },
+          topK: {
+            type: "number",
+            default: 5,
+            description: "Number of similar results to return"
+          },
+          threshold: {
+            type: "number",
+            default: 0.75,
+            description: "Similarity threshold (0-1)"
+          }
+        },
+        required: ["query"]
+      }
+    });
+    
+    // Complete RAG Query Tool
+    this.server.addTool({
+      name: "rag_query",
+      description: "Complete RAG query with context retrieval and generation",
+      inputSchema: {
+        type: "object",
+        properties: {
+          question: {
+            type: "string",
+            description: "User question"
+          },
+          maxTokens: {
+            type: "number",
+            default: 1000,
+            description: "Maximum response tokens"
+          },
+          temperature: {
+            type: "number",
+            default: 0.7,
+            description: "Response creativity (0-1)"
+          }
+        },
+        required: ["question"]
+      }
+    });
+  }
+
+  async processDocuments({ documents, chunkSize = 1024, overlap = 128 }) {
+    const results = [];
+    
+    for (const doc of documents) {
+      // 1. Chunk the document
+      const chunks = this.chunkText(doc, chunkSize, overlap);
+      
+      // 2. Generate embeddings for each chunk
+      const embeddings = await Promise.all(
+        chunks.map(chunk => this.generateEmbedding(chunk))
+      );
+      
+      // 3. Store in vector database
+      const vectors = embeddings.map((embedding, i) => ({
+        id: `doc_${Date.now()}_${i}`,
+        values: embedding,
+        metadata: {
+          text: chunks[i],
+          chunkIndex: i,
+          timestamp: new Date().toISOString()
+        }
+      }));
+      
+      await this.index.upsert(vectors);
+      results.push({
+        chunksProcessed: chunks.length,
+        vectorsStored: vectors.length
+      });
+    }
+    
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify({
+          message: "Documents processed successfully",
+          results: results,
+          totalChunks: results.reduce((sum, r) => sum + r.chunksProcessed, 0)
+        })
+      }]
+    };
+  }
+
+  async vectorSearch({ query, topK = 5, threshold = 0.75 }) {
+    // 1. Generate query embedding
+    const queryEmbedding = await this.generateEmbedding(query);
+    
+    // 2. Search vector database
+    const searchResults = await this.index.query({
+      vector: queryEmbedding,
+      topK: topK,
+      includeMetadata: true,
+      includeValues: false
+    });
+    
+    // 3. Filter by threshold
+    const filteredResults = searchResults.matches.filter(
+      match => match.score >= threshold
+    );
+    
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify({
+          query: query,
+          results: filteredResults.map(match => ({
+            text: match.metadata.text,
+            score: match.score,
+            id: match.id
+          })),
+          totalFound: filteredResults.length
+        })
+      }]
+    };
+  }
+
+  async ragQuery({ question, maxTokens = 1000, temperature = 0.7 }) {
+    // 1. Retrieve relevant context
+    const searchResponse = await this.vectorSearch({
+      query: question,
+      topK: 5,
+      threshold: 0.70
+    });
+    
+    const searchData = JSON.parse(searchResponse.content[0].text);
+    const context = searchData.results
+      .map(result => result.text)
+      .join("\n\n");
+    
+    // 2. Generate response with context
+    const completion = await this.openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful assistant. Use the provided context to answer questions accurately. If the context doesn't contain relevant information, say so."
+        },
+        {
+          role: "user",
+          content: `Context:\n${context}\n\nQuestion: ${question}`
+        }
+      ],
+      max_tokens: maxTokens,
+      temperature: temperature
+    });
+    
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify({
+          question: question,
+          answer: completion.choices[0].message.content,
+          context_used: searchData.results.length,
+          sources: searchData.results.map(r => r.id)
+        })
+      }]
+    };
+  }
+
+  chunkText(text, chunkSize, overlap) {
+    const words = text.split(' ');
+    const chunks = [];
+    
+    for (let i = 0; i < words.length; i += chunkSize - overlap) {
+      const chunk = words.slice(i, i + chunkSize).join(' ');
+      if (chunk.trim()) chunks.push(chunk);
+      if (i + chunkSize >= words.length) break;
+    }
+    
+    return chunks;
+  }
+
+  async generateEmbedding(text) {
+    const response = await this.openai.embeddings.create({
+      model: "text-embedding-3-small",
+      input: text
+    });
+    
+    return response.data[0].embedding;
+  }
+
+  async start() {
+    const transport = new StdioServerTransport();
+    await this.server.connect(transport);
+  }
+}
+
+// Start the server
+const server = new VectorRAGServer();
+server.start().catch(console.error);
+</div>
+</div>
+
+<div class="highlight-box">
+  <h3>Vector Database Options</h3>
+  <p><strong>Pinecone:</strong> Managed vector database with excellent performance and scaling</p>
+  <p><strong>Weaviate:</strong> Open-source vector database with GraphQL API and hybrid search</p>
+  <p><strong>ChromaDB:</strong> Lightweight, embeddable vector database for development</p>
+  <p><strong>FAISS:</strong> Facebook's library for efficient similarity search and clustering</p>
+</div>
+
+<h3>Chunking Strategies</h3>
+<p>Effective text chunking is crucial for RAG performance:</p>
+
+<div class="code-block">
+  <div class="ace-editor" id="editor14">// Advanced Chunking Strategies
+class ChunkingStrategies {
+  // Fixed-size chunking with overlap
+  static fixedSize(text, size = 1024, overlap = 128) {
+    const tokens = text.split(/\s+/);
+    const chunks = [];
+    
+    for (let i = 0; i < tokens.length; i += size - overlap) {
+      const chunk = tokens.slice(i, i + size).join(' ');
+      if (chunk.trim()) chunks.push(chunk);
+    }
+    
+    return chunks;
+  }
+  
+  // Semantic chunking by sentences
+  static semantic(text, maxTokens = 1024) {
+    const sentences = text.split(/[.!?]+/).filter(s => s.trim());
+    const chunks = [];
+    let currentChunk = '';
+    
+    for (const sentence of sentences) {
+      const testChunk = currentChunk + ' ' + sentence.trim();
+      
+      if (testChunk.split(/\s+/).length <= maxTokens) {
+        currentChunk = testChunk;
+      } else {
+        if (currentChunk) chunks.push(currentChunk.trim());
+        currentChunk = sentence.trim();
+      }
+    }
+    
+    if (currentChunk) chunks.push(currentChunk.trim());
+    return chunks;
+  }
+  
+  // Hierarchical chunking for structured documents
+  static hierarchical(text, maxTokens = 1024) {
+    const sections = text.split(/\n\s*#{1,6}\s/); // Split by headers
+    const chunks = [];
+    
+    for (const section of sections) {
+      if (section.split(/\s+/).length <= maxTokens) {
+        chunks.push(section.trim());
+      } else {
+        // Further chunk large sections
+        const subChunks = this.semantic(section, maxTokens);
+        chunks.push(...subChunks);
+      }
+    }
+    
+    return chunks;
+  }
+  
+  // Sliding window chunking for better context preservation
+  static slidingWindow(text, windowSize = 512, step = 256) {
+    const tokens = text.split(/\s+/);
+    const chunks = [];
+    
+    for (let i = 0; i <= tokens.length - windowSize; i += step) {
+      const chunk = tokens.slice(i, i + windowSize).join(' ');
+      chunks.push(chunk);
+    }
+    
+    // Add final chunk if needed
+    if (tokens.length > windowSize) {
+      const finalChunk = tokens.slice(-windowSize).join(' ');
+      if (!chunks.includes(finalChunk)) {
+        chunks.push(finalChunk);
+      }
+    }
+    
+    return chunks;
+  }
+}
+
+// Usage example with MCP tool
+server.addTool({
+  name: "advanced_chunking",
+  description: "Apply different chunking strategies to documents",
+  inputSchema: {
+    type: "object",
+    properties: {
+      text: { type: "string", description: "Text to chunk" },
+      strategy: { 
+        type: "string", 
+        enum: ["fixed", "semantic", "hierarchical", "sliding"],
+        default: "semantic",
+        description: "Chunking strategy to use"
+      },
+      params: {
+        type: "object",
+        description: "Strategy-specific parameters"
+      }
+    },
+    required: ["text"]
+  }
+});
+</div>
+</div>
+
+<button class="btn" onclick="markSectionComplete('rag-vector')">Mark Complete</button>

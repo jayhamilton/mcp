@@ -4,6 +4,7 @@ import { QuizManager } from './modules/quiz.js';
 import { AceEditorManager } from './modules/ace-editor.js';
 import { RAGAnimationManager } from './modules/animation-rag.js';
 import { MCPAnimationManager } from './modules/animation-mcp.js';
+import { VectorRAGAnimationManager } from './modules/animation-rag-vector.js';
 import { BannerAnimationManager } from './modules/animation-banner.js';
 import { ContentLoader } from './modules/content-loader.js';
 
@@ -15,6 +16,7 @@ class GenAIContextTraining {
     this.quizManager = new QuizManager(this.navigationManager);
     this.mcpAnimationManager = new MCPAnimationManager();
     this.ragAnimationManager = new RAGAnimationManager();
+    this.vectorRAGAnimationManager = new VectorRAGAnimationManager();
     this.bannerAnimationManager = new BannerAnimationManager();
     
     this.init();
@@ -40,6 +42,7 @@ class GenAIContextTraining {
     AceEditorManager.initializeAceEditors();
     this.mcpAnimationManager.initializeMCPAnimation();
     this.ragAnimationManager.initializeRAGAnimation();
+    this.vectorRAGAnimationManager.initializeVectorRAGAnimations();
     this.bannerAnimationManager.initializeBannerAnimation();
   }
 
