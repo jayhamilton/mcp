@@ -239,11 +239,15 @@ body {
   border: 2px solid #e9ecef;
 }
 
-.communication-diagram {
+.communication-diagram, .mcp-diagram {
   width: 100%;
   max-width: 800px;
   height: 400px;
   margin: 0 auto;
+}
+
+.mcp-diagram {
+  height: 500px;
 }
 
 .diagram-controls {
@@ -273,6 +277,186 @@ body {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
+}
+
+/* Enhanced SVG Diagram Styling */
+.enhanced-communication-diagram {
+  width: 100%;
+  max-width: 1000px;
+  height: 600px;
+  margin: 0 auto;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.enhanced-diagram-controls {
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.diagram-btn.primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.diagram-btn.secondary {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  padding: 10px 20px;
+  font-size: 0.9rem;
+}
+
+.diagram-btn.tertiary {
+  background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+  padding: 10px 20px;
+  font-size: 0.9rem;
+}
+
+.speed-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+}
+
+.speed-controls label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.speed-controls input[type="range"] {
+  width: 100px;
+  height: 4px;
+  border-radius: 2px;
+  background: #e2e8f0;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.speed-controls input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #667eea;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.speed-controls input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #667eea;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.speed-controls span {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #667eea;
+  min-width: 40px;
+}
+
+/* Enhanced Animation Elements */
+.client-main-box, .server-main-box {
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+  transition: all 0.3s ease;
+}
+
+.client-main-box:hover, .server-main-box:hover {
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.2));
+}
+
+.client-components rect, .server-components rect {
+  transition: all 0.3s ease;
+}
+
+.tools-box, .resources-box {
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.1));
+  transition: all 0.3s ease;
+}
+
+.step-label {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  transition: all 0.3s ease;
+}
+
+.step-label rect {
+  transition: all 0.3s ease;
+}
+
+.step-label:hover rect {
+  stroke-width: 3;
+}
+
+.message-dot {
+  transition: all 0.3s ease;
+}
+
+.progress-indicator .progress-bg {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1));
+}
+
+.progress-indicator .progress-fill {
+  filter: drop-shadow(0 1px 3px rgba(102, 126, 234, 0.3));
+  transition: width 0.5s ease;
+}
+
+/* Glowing status indicators */
+.client-status, .server-status {
+  filter: drop-shadow(0 0 6px currentColor);
+}
+
+/* Enhanced message paths */
+.message-path {
+  filter: drop-shadow(0 0 3px currentColor);
+  transition: all 0.3s ease;
+}
+
+.handshake-path {
+  stroke-dasharray: 10, 5;
+  animation: dash 2s linear infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -15;
+  }
+}
+
+/* Responsive design for enhanced diagram */
+@media (max-width: 1200px) {
+  .enhanced-communication-diagram {
+    max-width: 900px;
+    height: 540px;
+  }
+}
+
+@media (max-width: 768px) {
+  .enhanced-communication-diagram {
+    height: 480px;
+  }
+  
+  .enhanced-diagram-controls {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .speed-controls {
+    margin-top: 0.5rem;
+  }
 }
 
 /* SVG Animation Elements */
