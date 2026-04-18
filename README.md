@@ -156,6 +156,100 @@ The learning module is designed with educational best practices:
 - **Assessment**: Quiz system to reinforce knowledge retention
 - **Practical Application**: Real-world code examples and implementation patterns
 
+## 🤖 Agent-Driven Development
+
+This project uses a multi-agent pipeline to manage change requests, implement features, run QA, and produce documentation. Epics are tracked as **GitHub Milestones** and stories as **GitHub Issues**.
+
+### Pipeline Overview
+
+```
+Change Request
+     ↓
+PO Agent → creates Milestone (epic) + Issues (stories) with status:ready-for-dev
+     ↓
+Dev Agent → writes spec, implements, comments impl summary → status:ready-for-qa
+     ↓
+QA Agent → writes test plan, evaluates code, comments results → status:ready-for-docs (or dev-rework)
+     ↓
+Docs Agent → writes documentation, comments it, closes issue → status:done
+```
+
+### Prerequisites
+
+- Node.js 18+ (native `fetch` required)
+- A GitHub personal access token with **repo** scope
+  - Create one at: GitHub → Settings → Developer settings → Personal access tokens
+
+### Setup
+
+```bash
+# Install dependencies
+npm install
+
+# Set your GitHub token
+export GITHUB_TOKEN=ghp_your_token_here
+
+# Create the required labels in the repo (run once)
+npm run bootstrap
+```
+
+### Running the Agents
+
+```bash
+# Submit a change request to the PO agent (creates Milestone + Issues)
+npm run po "Add dark mode to the learning module"
+
+# Or pass a request from a file
+npm run po -- --file .work/requests/my-request.md
+
+# Run the orchestrator once (processes all actionable issues)
+npm run run
+
+# Run the orchestrator in watch mode (polls every 60s)
+npm run watch
+
+# Target a specific issue
+node agents/orchestrator.js --issue 7
+
+# Run individual agents directly
+node agents/dev-agent.js 7
+node agents/qa-agent.js 7
+node agents/docs-agent.js 7
+```
+
+### Local Artifacts
+
+Agents write supporting files to `.work/` (tracked in git):
+
+```
+.work/
+├── requests/        ← drop raw change request files here
+├── specs/           ← dev agent writes spec before coding (SPEC-<issue>.md)
+├── implementations/ ← dev agent writes impl summary (IMPL-<issue>.md)
+├── test-plans/      ← QA agent writes test plan (TESTPLAN-<issue>.md)
+├── test-results/    ← QA agent writes results (RESULT-<issue>.md)
+└── docs/            ← docs agent writes documentation (DOC-<issue>.md)
+```
+
+Impl summaries, QA results, and documentation are also posted as comments on the GitHub issue, making each issue a complete audit trail.
+
+### Agent Source
+
+```
+agents/
+├── bootstrap.js       ← run once to set up GitHub labels
+├── po-agent.js        ← Product Owner: creates milestones and issues
+├── dev-agent.js       ← Developer: spec-driven implementation
+├── qa-agent.js        ← QA: test plans and code review
+├── docs-agent.js      ← Documentation: writes and posts docs
+├── orchestrator.js    ← Routes issues to agents by status label
+└── lib/
+    ├── github.js        ← GitHub REST API client (native fetch)
+    ├── github-tools.js  ← Anthropic SDK tool definitions for GitHub
+    ├── fs-tools.js      ← Anthropic SDK tool definitions for filesystem
+    └── agent-runner.js  ← Shared agentic loop
+```
+
 ## 🤝 Contributing
 
 This project serves as an educational resource. Contributions are welcome:
