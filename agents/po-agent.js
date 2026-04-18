@@ -2,44 +2,47 @@
  * Product Owner Agent
  *
  * Accepts a change request and produces:
- *   - A GitHub Milestone (epic)
- *   - One or more GitHub Issues (stories) linked to the milestone
- *     with label: type:story, status:ready-for-dev, priority:*
+ *   - A GitHub Milestone (epic)     via custom tool (not in GitHub MCP server)
+ *   - GitHub Issues (stories)       via GitHub MCP server
  *
  * Usage:
  *   node agents/po-agent.js "Add dark mode to the learning module"
  *   node agents/po-agent.js --file .work/requests/my-request.md
  *
- * Required env:
- *   GITHUB_TOKEN — personal access token with repo scope
+ * Required env: GITHUB_TOKEN
  */
 
 'use strict';
 
 const Anthropic = require('@anthropic-ai/sdk');
 const fs = require('fs');
-const { toolDefinitions, handleToolCall } = require('./lib/github-tools');
+const { createGitHubClient, toAnthropicTools, callTool } = require('./lib/mcp-client');
+const { toolDefinitions: customDefs, handleToolCall: customHandler } = require('./lib/custom-tools');
 const { runAgent } = require('./lib/agent-runner');
-const { bootstrapLabels } = require('./lib/github');
+const { bootstrapLabels, getRepo } = require('./lib/github');
 
-const SYSTEM_PROMPT = `You are a Product Owner agent. You take a change request and create GitHub issues (stories) grouped under a GitHub milestone (epic).
+const SYSTEM_PROMPT = (repo) => {
+  const [owner, repoName] = repo.split('/');
+  return `You are a Product Owner agent for the GitHub repo "${repo}".
+
+All GitHub tool calls require owner="${owner}" and repo="${repoName}".
 
 ## Your process
 
 ### Step 1: List existing milestones
-Call github_list_milestones to see what epics already exist and avoid duplicating them.
+Call list_milestones to see existing epics and avoid duplicating them.
 
 ### Step 2: Create the milestone (epic)
-Call github_create_milestone with:
-- title: short, descriptive (under 60 chars)
-- description: one paragraph on what this epic achieves and why
+Call create_milestone with:
+- title: concise, under 60 chars
+- description: one paragraph on what this epic achieves and why it matters
 
 ### Step 3: Create story issues
-Call github_create_issue for each discrete deliverable. Each issue must have:
+For each discrete deliverable, call create_issue. Each issue must have:
 
-**Title**: concise (under 60 chars)
+**title**: concise, under 60 chars
 
-**Body** (markdown):
+**body** (markdown):
 ## Story
 As a <role>, I want <capability> so that <benefit>.
 
@@ -53,36 +56,64 @@ As a <role>, I want <capability> so that <benefit>.
 ## Out of Scope
 - <explicit exclusions>
 
-**Labels**: always include ALL of these:
+**labels**: always include ALL of these:
 - type:story
 - status:ready-for-dev
 - priority:high OR priority:medium OR priority:low
 
-**milestone_number**: the number returned from the milestone you just created
+**milestone**: the milestone number returned from create_milestone
 
 ## Story rules
 - Each story must be independently deliverable
 - Acceptance criteria must be verifiable by reading or running code
-- Prefer smaller stories over large ones
-- Do not create stories for things outside the request's scope`;
+- Prefer smaller stories over large ones`;
+};
 
 async function run(changeRequest) {
-  const client = new Anthropic();
+  const anthropic = new Anthropic();
+  const repo = getRepo();
+
   console.log('[PO Agent] Bootstrapping GitHub labels...');
   await bootstrapLabels();
-  console.log('[PO Agent] Processing change request...\n');
 
-  const result = await runAgent({
-    client,
-    systemPrompt: SYSTEM_PROMPT,
-    userMessage: `Process this change request and create a milestone + story issues in GitHub:\n\n${changeRequest}`,
-    tools: toolDefinitions,
-    handleToolCall
-  });
+  console.log('[PO Agent] Connecting to GitHub MCP server...');
+  const githubClient = await createGitHubClient();
 
-  console.log('\n[PO Agent] Complete.\n');
-  console.log(result);
-  return result;
+  try {
+    const { tools: ghTools } = await githubClient.listTools();
+    // Only expose the tools the PO agent needs
+    const allowedGhTools = ['create_issue', 'list_issues'];
+    const filteredGhTools = ghTools.filter(t => allowedGhTools.includes(t.name));
+
+    const allTools = [
+      ...toAnthropicTools(filteredGhTools),
+      ...customDefs
+    ];
+
+    const customToolNames = new Set(customDefs.map(t => t.name));
+
+    async function handleToolCall(name, input) {
+      if (customToolNames.has(name)) return customHandler(name, input);
+      return callTool(githubClient, name, input);
+    }
+
+    console.log('[PO Agent] Processing change request...\n');
+
+    const result = await runAgent({
+      client: anthropic,
+      systemPrompt: SYSTEM_PROMPT(repo),
+      userMessage: `Process this change request and create a milestone and story issues:\n\n${changeRequest}`,
+      tools: allTools,
+      handleToolCall
+    });
+
+    console.log('\n[PO Agent] Complete.\n');
+    console.log(result);
+    return result;
+
+  } finally {
+    await githubClient.close();
+  }
 }
 
 if (require.main === module) {

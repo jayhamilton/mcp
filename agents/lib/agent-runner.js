@@ -1,7 +1,10 @@
 /**
  * Shared agentic loop for all agents.
  * Drives a tool-use conversation until the model returns end_turn.
+ * handleToolCall must return a Promise (or plain value) — both are awaited.
  */
+
+'use strict';
 
 async function runAgent({ client, model = 'claude-opus-4-6', systemPrompt, userMessage, tools, handleToolCall, maxTokens = 8096 }) {
   const messages = [{ role: 'user', content: userMessage }];
@@ -26,8 +29,8 @@ async function runAgent({ client, model = 'claude-opus-4-6', systemPrompt, userM
       const toolResults = [];
       for (const block of response.content) {
         if (block.type === 'tool_use') {
-          console.log(`  [tool] ${block.name}(${JSON.stringify(block.input)})`);
-          const result = handleToolCall(block.name, block.input);
+          console.log(`  [tool] ${block.name}`);
+          const result = await Promise.resolve(handleToolCall(block.name, block.input));
           toolResults.push({
             type: 'tool_result',
             tool_use_id: block.id,
@@ -40,7 +43,6 @@ async function runAgent({ client, model = 'claude-opus-4-6', systemPrompt, userM
       continue;
     }
 
-    // Unexpected stop reason
     throw new Error(`Unexpected stop_reason: ${response.stop_reason}`);
   }
 }

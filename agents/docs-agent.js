@@ -1,56 +1,57 @@
 /**
  * Documentation Agent
  *
- * Takes a GitHub issue number (story with status:ready-for-docs) and:
- *   1. Reads the issue body and all comments (impl summary, QA result)
- *   2. Reads the changed source files for current state
- *   3. Writes developer documentation to .work/docs/DOC-<issue>.md
- *   4. Posts the documentation as a GitHub issue comment
- *   5. Sets issue status to done and closes the issue
+ * Takes a GitHub issue number (status:ready-for-docs) and:
+ *   1. Reads issue + comments via GitHub MCP server
+ *   2. Reads changed source files via filesystem MCP server
+ *   3. Writes documentation to .work/docs/DOC-<issue>.md
+ *   4. Posts documentation as a GitHub issue comment
+ *   5. Sets status to done and closes the issue
  *
  * Usage:
  *   node agents/docs-agent.js <issue-number>
  *
- * Required env:
- *   GITHUB_TOKEN — personal access token with repo scope
+ * Required env: GITHUB_TOKEN
  */
 
 'use strict';
 
 const Anthropic = require('@anthropic-ai/sdk');
-const { toolDefinitions: githubTools, handleToolCall: githubHandler } = require('./lib/github-tools');
-const { toolDefinitions: fsTools, handleToolCall: fsHandler } = require('./lib/fs-tools');
+const { createGitHubClient, createFilesystemClient, toAnthropicTools, callTool } = require('./lib/mcp-client');
+const { toolDefinitions: customDefs, handleToolCall: customHandler } = require('./lib/custom-tools');
 const { runAgent } = require('./lib/agent-runner');
+const { getRepo } = require('./lib/github');
+const path = require('path');
 
-const allTools = [...githubTools, ...fsTools];
+const ROOT = path.join(__dirname, '..');
 
-function handleToolCall(name, input) {
-  const githubToolNames = new Set(githubTools.map(t => t.name));
-  return githubToolNames.has(name)
-    ? githubHandler(name, input)
-    : fsHandler(name, input);
-}
+const SYSTEM_PROMPT = (repo, issueNumber) => {
+  const [owner, repoName] = repo.split('/');
+  return `You are a Documentation Agent for the GitHub repo "${repo}".
 
-const SYSTEM_PROMPT = `You are a Documentation Agent. You produce clear, accurate developer documentation for a completed feature.
+All GitHub tool calls require owner="${owner}" and repo="${repoName}".
 
 ## Your process — follow this order exactly
 
 ### Step 1: Gather context
-- Call github_get_issue with the issue number
-- Call github_list_comments to get the Implementation Summary and QA Results comments
-- Read the spec: .work/specs/SPEC-<issue-number>.md
-- Read each source file listed in the Implementation Summary's "Changes Made" section
+- Call get_issue with issue_number=${issueNumber} to read the story
+- Read the issue comments to find the Implementation Summary and QA Results comments
+  (use search_issues with query "repo:${repo} is:issue ${issueNumber}")
+- Read .work/specs/SPEC-${issueNumber}.md using read_file
+- Read .work/implementations/IMPL-${issueNumber}.md using read_file
+- Read .work/test-results/RESULT-${issueNumber}.md using read_file
+- Read each source file listed in the IMPL's "Changes Made" section
 
 ### Step 2: Write documentation to file
-Write .work/docs/DOC-<issue-number>.md
+Write .work/docs/DOC-${issueNumber}.md using write_file.
 
 Format:
 # <Feature Title>
-**Issue**: #<number>
+**Issue**: #${issueNumber}
 **Date**: <today>
 
 ## Overview
-<2-3 sentences: what was added or changed and why>
+<2-3 sentences: what was added/changed and why>
 
 ## What Changed
 | File | Change |
@@ -58,53 +59,88 @@ Format:
 | <file> | <what changed> |
 
 ## How It Works
-<Explain the implementation clearly enough that another developer could maintain it.
-Include actual code snippets from the source files — not invented examples.>
+<Explain clearly enough that another developer can maintain it.
+Use actual code snippets from the source files — not invented examples.>
 
 ## Usage
 <If user-facing: how a user interacts with it.
-If developer-facing: API, function signatures, or configuration.>
+If developer-facing: API, function signatures, configuration.>
 
 ## Known Limitations
-<Anything from QA notes or spec risks that was deferred.
-Write NONE if there are no known limitations.>
+<Deferred items from QA notes or spec risks. Write NONE if clean.>
 
 ## Related Files
-- <file path> — <one-line description of its role>
+- <file path> — <one-line role description>
 
 ### Step 3: Post the documentation as a GitHub comment
-Call github_add_comment with the same documentation content, prefixed with:
+Call add_issue_comment on issue ${issueNumber} with the same content, prefixed with:
 
 ## Documentation
 
-<rest of doc content>
+<rest of doc>
 
 ### Step 4: Close the issue
-- Call github_set_status with status="done"
-- Call github_close_issue
+- Call set_issue_status with status="done"
+- Call update_issue with state="closed" and state_reason="completed"
 
 ## Rules
-- Document what the code actually does — read the source, do not invent
-- Code snippets must come from the actual implementation files you read
+- Document what the code actually does — read source, do not invent
+- Code snippets must come from the actual source files you read
 - A developer should understand the change in under 3 minutes
-- Known Limitations must be honest — do not omit deferred bugs or gaps
-- Do not repeat information obvious from the file name or function name`;
+- Known Limitations must be honest`;
+};
 
 async function run(issueNumber) {
-  const client = new Anthropic();
-  console.log(`[Docs Agent] Documenting issue #${issueNumber}...\n`);
+  const anthropic = new Anthropic();
+  const repo = getRepo();
 
-  const result = await runAgent({
-    client,
-    systemPrompt: SYSTEM_PROMPT,
-    userMessage: `Document the completed feature in GitHub issue #${issueNumber}.`,
-    tools: allTools,
-    handleToolCall
-  });
+  console.log(`[Docs Agent] Connecting to MCP servers for issue #${issueNumber}...`);
+  const [githubClient, fsClient] = await Promise.all([
+    createGitHubClient(),
+    createFilesystemClient(ROOT)
+  ]);
 
-  console.log('\n[Docs Agent] Complete.\n');
-  console.log(result);
-  return result;
+  try {
+    const [{ tools: ghTools }, { tools: fsTools }] = await Promise.all([
+      githubClient.listTools(),
+      fsClient.listTools()
+    ]);
+
+    const allowedGhTools = ['get_issue', 'update_issue', 'add_issue_comment', 'search_issues'];
+    const allowedFsTools = ['read_file', 'write_file', 'list_directory'];
+
+    const allTools = [
+      ...toAnthropicTools(ghTools.filter(t => allowedGhTools.includes(t.name))),
+      ...toAnthropicTools(fsTools.filter(t => allowedFsTools.includes(t.name))),
+      customDefs.find(t => t.name === 'set_issue_status')
+    ].filter(Boolean);
+
+    const ghToolNames  = new Set(ghTools.map(t => t.name));
+    const customToolNames = new Set(customDefs.map(t => t.name));
+
+    async function handleToolCall(name, input) {
+      if (customToolNames.has(name)) return customHandler(name, input);
+      if (ghToolNames.has(name))    return callTool(githubClient, name, input);
+      return callTool(fsClient, name, input);
+    }
+
+    console.log(`[Docs Agent] Documenting issue #${issueNumber}...\n`);
+
+    const result = await runAgent({
+      client: anthropic,
+      systemPrompt: SYSTEM_PROMPT(repo, issueNumber),
+      userMessage: `Document the completed feature in GitHub issue #${issueNumber}.`,
+      tools: allTools,
+      handleToolCall
+    });
+
+    console.log('\n[Docs Agent] Complete.\n');
+    console.log(result);
+    return result;
+
+  } finally {
+    await Promise.all([githubClient.close(), fsClient.close()]);
+  }
 }
 
 if (require.main === module) {

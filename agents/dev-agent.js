@@ -1,39 +1,37 @@
 /**
  * Development Agent
  *
- * Takes a GitHub issue number (story with status:ready-for-dev or status:dev-rework) and:
- *   1. Reads the issue body (acceptance criteria, technical notes)
- *   2. Reads relevant source files
- *   3. Writes a spec to .work/specs/SPEC-<issue>.md BEFORE touching source code
- *   4. Implements the changes
- *   5. Posts an implementation summary as a GitHub issue comment
- *   6. Writes implementation summary to .work/implementations/IMPL-<issue>.md
- *   7. Sets issue status to ready-for-qa
+ * Takes a GitHub issue number (status:ready-for-dev or status:dev-rework) and:
+ *   1. Reads the issue via GitHub MCP server
+ *   2. Reads source files via filesystem MCP server
+ *   3. Writes spec to .work/specs/SPEC-<issue>.md (filesystem MCP)
+ *   4. Implements the changes (filesystem MCP)
+ *   5. Posts impl summary as GitHub issue comment (GitHub MCP)
+ *   6. Writes impl summary to .work/implementations/IMPL-<issue>.md (filesystem MCP)
+ *   7. Sets status to ready-for-qa (custom tool)
  *
  * Usage:
  *   node agents/dev-agent.js <issue-number>
  *
- * Required env:
- *   GITHUB_TOKEN — personal access token with repo scope
+ * Required env: GITHUB_TOKEN
  */
 
 'use strict';
 
 const Anthropic = require('@anthropic-ai/sdk');
-const { toolDefinitions: githubTools, handleToolCall: githubHandler } = require('./lib/github-tools');
-const { toolDefinitions: fsTools, handleToolCall: fsHandler } = require('./lib/fs-tools');
+const { createGitHubClient, createFilesystemClient, toAnthropicTools, callTool } = require('./lib/mcp-client');
+const { toolDefinitions: customDefs, handleToolCall: customHandler } = require('./lib/custom-tools');
 const { runAgent } = require('./lib/agent-runner');
+const { getRepo } = require('./lib/github');
+const path = require('path');
 
-const allTools = [...githubTools, ...fsTools];
+const ROOT = path.join(__dirname, '..');
 
-function handleToolCall(name, input) {
-  const githubToolNames = new Set(githubTools.map(t => t.name));
-  return githubToolNames.has(name)
-    ? githubHandler(name, input)
-    : fsHandler(name, input);
-}
+const SYSTEM_PROMPT = (repo, issueNumber) => {
+  const [owner, repoName] = repo.split('/');
+  return `You are a spec-driven Development Agent working on the GitHub repo "${repo}".
 
-const SYSTEM_PROMPT = `You are a spec-driven Development Agent. You implement software changes for a static HTML/JavaScript learning module.
+All GitHub tool calls require owner="${owner}" and repo="${repoName}".
 
 ## Project structure
 - index.html — shell, loads scripts and navigation
@@ -48,19 +46,19 @@ const SYSTEM_PROMPT = `You are a spec-driven Development Agent. You implement so
 ## Your process — follow this order exactly
 
 ### Step 1: Read the GitHub issue
-Call github_get_issue with the issue number provided.
-If the issue has existing comments, call github_list_comments to read them
-(for dev-rework stories, the QA test result comment will be there).
+Call get_issue with issue_number=${issueNumber}.
+Then call get_issue comments via list the issue to check for existing comments.
+If status is dev-rework, read comments to find the QA failure details.
 
 ### Step 2: Read relevant source files
-Use read_file on any source files you will need to understand before coding.
+Use read_file on source files you need to understand before coding.
 
 ### Step 3: Write the spec BEFORE touching source code
-Write .work/specs/SPEC-<issue-number>.md
+Write .work/specs/SPEC-${issueNumber}.md using write_file.
 
 Spec format:
 # Spec: <story title>
-**Issue**: #<number>
+**Issue**: #${issueNumber}
 **Date**: <today>
 
 ## Approach
@@ -76,16 +74,16 @@ Spec format:
 - <anything uncertain that QA should verify>
 
 ### Step 4: Implement the changes
+Use write_file or edit_file to modify source files.
 - Make only the changes described in the spec
 - Do not refactor surrounding code
-- Do not add comments or documentation unless the story requires it
 - Implement exactly what the acceptance criteria require — nothing more
 
 ### Step 5: Post implementation summary as a GitHub comment
-Call github_add_comment on the issue with this format:
+Call add_issue_comment on issue ${issueNumber} with this body:
 
 ## Implementation Summary
-**Spec**: .work/specs/SPEC-<issue-number>.md
+**Spec**: .work/specs/SPEC-${issueNumber}.md
 
 ### Changes Made
 - <file>: <what changed>
@@ -97,32 +95,69 @@ Call github_add_comment on the issue with this format:
 <Anything QA should specifically verify>
 
 ### Step 6: Write implementation summary to file
-Write the same content to .work/implementations/IMPL-<issue-number>.md
+Write the same content to .work/implementations/IMPL-${issueNumber}.md
 
 ### Step 7: Update the issue status
-Call github_set_status with number=<issue-number> and status="ready-for-qa"
+Call set_issue_status with issue_number=${issueNumber} and status="ready-for-qa"
 
 ## Rules
-- Never skip the spec step
+- Never skip the spec step — write the spec file before any source file changes
 - Only implement what the story and acceptance criteria describe
-- If it is a dev-rework issue, read the QA failure comment first and address those failures
-- The spec file uses the GitHub issue number, not a sequential ID`;
+- If this is a dev-rework, address the specific QA failures found in the comments`;
+};
 
 async function run(issueNumber) {
-  const client = new Anthropic();
-  console.log(`[Dev Agent] Processing issue #${issueNumber}...\n`);
+  const anthropic = new Anthropic();
+  const repo = getRepo();
 
-  const result = await runAgent({
-    client,
-    systemPrompt: SYSTEM_PROMPT,
-    userMessage: `Implement the story in GitHub issue #${issueNumber}.`,
-    tools: allTools,
-    handleToolCall
-  });
+  console.log(`[Dev Agent] Connecting to MCP servers for issue #${issueNumber}...`);
+  const [githubClient, fsClient] = await Promise.all([
+    createGitHubClient(),
+    createFilesystemClient(ROOT)
+  ]);
 
-  console.log('\n[Dev Agent] Complete.\n');
-  console.log(result);
-  return result;
+  try {
+    const [{ tools: ghTools }, { tools: fsTools }] = await Promise.all([
+      githubClient.listTools(),
+      fsClient.listTools()
+    ]);
+
+    const allowedGhTools  = ['get_issue', 'list_issues', 'add_issue_comment'];
+    const allowedFsTools  = ['read_file', 'write_file', 'edit_file', 'list_directory', 'create_directory'];
+
+    const allTools = [
+      ...toAnthropicTools(ghTools.filter(t => allowedGhTools.includes(t.name))),
+      ...toAnthropicTools(fsTools.filter(t => allowedFsTools.includes(t.name))),
+      // Only expose set_issue_status from custom tools
+      customDefs.find(t => t.name === 'set_issue_status')
+    ].filter(Boolean);
+
+    const ghToolNames = new Set(ghTools.map(t => t.name));
+    const customToolNames = new Set(customDefs.map(t => t.name));
+
+    async function handleToolCall(name, input) {
+      if (customToolNames.has(name)) return customHandler(name, input);
+      if (ghToolNames.has(name))    return callTool(githubClient, name, input);
+      return callTool(fsClient, name, input);
+    }
+
+    console.log(`[Dev Agent] Processing issue #${issueNumber}...\n`);
+
+    const result = await runAgent({
+      client: anthropic,
+      systemPrompt: SYSTEM_PROMPT(repo, issueNumber),
+      userMessage: `Implement the story in GitHub issue #${issueNumber}.`,
+      tools: allTools,
+      handleToolCall
+    });
+
+    console.log('\n[Dev Agent] Complete.\n');
+    console.log(result);
+    return result;
+
+  } finally {
+    await Promise.all([githubClient.close(), fsClient.close()]);
+  }
 }
 
 if (require.main === module) {
