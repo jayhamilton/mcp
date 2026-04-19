@@ -6,11 +6,32 @@
 
 'use strict';
 
-async function runAgent({ client, model = 'claude-opus-4-6', systemPrompt, userMessage, tools, handleToolCall, maxTokens = 8096 }) {
+async function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+async function createWithRetry(client, params, retries = 5) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await client.messages.create(params);
+    } catch (err) {
+      const is429 = err.status === 429 || (err.message && err.message.includes('rate_limit'));
+      if (is429 && i < retries - 1) {
+        const wait = Math.pow(2, i + 1) * 10000; // 20s, 40s, 80s, 160s
+        console.log(`  [rate limit] Waiting ${wait / 1000}s before retry ${i + 1}/${retries - 1}...`);
+        await sleep(wait);
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
+async function runAgent({ client, model = 'claude-sonnet-4-6', systemPrompt, userMessage, tools, handleToolCall, maxTokens = 8096 }) {
   const messages = [{ role: 'user', content: userMessage }];
 
   while (true) {
-    const response = await client.messages.create({
+    const response = await createWithRetry(client, {
       model,
       max_tokens: maxTokens,
       system: systemPrompt,

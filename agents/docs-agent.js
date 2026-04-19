@@ -42,6 +42,10 @@ All GitHub tool calls require owner="${owner}" and repo="${repoName}".
 - Read .work/test-results/RESULT-${issueNumber}.md using read_file
 - Read each source file listed in the IMPL's "Changes Made" section
 
+### Step 1.5: Mark the issue as in-progress
+Call set_issue_status with issue_number=${issueNumber} and status="in-docs".
+Do this immediately after gathering context, before writing documentation.
+
 ### Step 2: Write documentation to file
 Write .work/docs/DOC-${issueNumber}.md using write_file.
 
@@ -79,6 +83,12 @@ Call add_issue_comment on issue ${issueNumber} with the same content, prefixed w
 
 <rest of doc>
 
+### Step 3.5: Commit documentation
+Call git_commit with a message in the format:
+  docs: complete story #${issueNumber} - <story title>
+
+This commits the documentation file and signals that the full story (dev + QA + docs) is finished.
+
 ### Step 4: Close the issue
 - Call set_issue_status with status="done"
 - Call update_issue with state="closed" and state_reason="completed"
@@ -112,6 +122,7 @@ async function run(issueNumber) {
     const allTools = [
       ...toAnthropicTools(ghTools.filter(t => allowedGhTools.includes(t.name))),
       ...toAnthropicTools(fsTools.filter(t => allowedFsTools.includes(t.name))),
+      customDefs.find(t => t.name === 'git_commit'),
       customDefs.find(t => t.name === 'set_issue_status')
     ].filter(Boolean);
 

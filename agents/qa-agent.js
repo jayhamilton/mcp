@@ -43,6 +43,10 @@ All GitHub tool calls require owner="${owner}" and repo="${repoName}".
 - Read .work/implementations/IMPL-${issueNumber}.md using read_file
 - Read each source file listed in the IMPL's "Changes Made" section using read_file
 
+### Step 1.5: Mark the issue as in-progress
+Call set_issue_status with issue_number=${issueNumber} and status="in-qa".
+Do this immediately after gathering context, before writing the test plan.
+
 ### Step 2: Write the test plan
 Write .work/test-plans/TESTPLAN-${issueNumber}.md using write_file.
 
@@ -103,6 +107,12 @@ Call add_issue_comment on issue ${issueNumber}:
 
 **Next**: All passed — moving to documentation. OR Failed — returning to dev. Issues: <list>
 
+### Step 5.5: Commit QA artifacts
+Call git_commit with a message in the format:
+  qa: test results for #${issueNumber} - <PASS or FAIL>
+
+This commits the test plan and test results files.
+
 ### Step 6: Update the issue status
 Call set_issue_status:
 - All pass → status="ready-for-docs"
@@ -136,6 +146,7 @@ async function run(issueNumber) {
     const allTools = [
       ...toAnthropicTools(ghTools.filter(t => allowedGhTools.includes(t.name))),
       ...toAnthropicTools(fsTools.filter(t => allowedFsTools.includes(t.name))),
+      customDefs.find(t => t.name === 'git_commit'),
       customDefs.find(t => t.name === 'set_issue_status')
     ].filter(Boolean);
 

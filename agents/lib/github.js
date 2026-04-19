@@ -122,8 +122,10 @@ async function bootstrapLabels() {
     { name: 'status:ready-for-dev', color: '28a745', description: 'Picked up by dev agent next run' },
     { name: 'status:in-dev',        color: 'f9d0c4', description: 'Dev agent is working on this' },
     { name: 'status:ready-for-qa',  color: 'e4e669', description: 'QA agent picks up next run' },
+    { name: 'status:in-qa',         color: 'f9d0c4', description: 'QA agent is working on this' },
     { name: 'status:dev-rework',    color: 'd93f0b', description: 'QA failed — back to dev' },
-    { name: 'status:ready-for-docs','color': '0e8a16', description: 'Docs agent picks up next run' },
+    { name: 'status:ready-for-docs',color: '0e8a16', description: 'Docs agent picks up next run' },
+    { name: 'status:in-docs',       color: 'f9d0c4', description: 'Docs agent is working on this' },
     { name: 'status:done',          color: 'cfd3d7', description: 'Complete' },
     { name: 'priority:high',        color: 'b60205', description: '' },
     { name: 'priority:medium',      color: 'fbca04', description: '' },
@@ -141,8 +143,10 @@ const STATUS_LABELS = [
   'status:ready-for-dev',
   'status:in-dev',
   'status:ready-for-qa',
+  'status:in-qa',
   'status:dev-rework',
   'status:ready-for-docs',
+  'status:in-docs',
   'status:done'
 ];
 

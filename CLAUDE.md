@@ -101,6 +101,56 @@ MCP enables querying multiple data sources simultaneously, allowing AI models to
 - **Scalability**: Efficient resource management and connection pooling
 - **Flexibility**: Support for various data formats and retrieval methods
 
+## Multi-Agent Development Pipeline
+
+The `agents/` directory contains an automated pipeline that processes GitHub Issues through dev, QA, and docs stages.
+
+### Running the Pipeline
+```bash
+node agents/orchestrator.js              # process all actionable issues once
+node agents/orchestrator.js --watch      # poll every 60s
+node agents/orchestrator.js --issue 42   # run a specific issue
+```
+
+### GitHub Issue Status Lifecycle
+
+Each issue carries exactly one `status:*` label at all times. Agents must update the label at the start **and** end of their work so the issue always reflects current state.
+
+| Label | Meaning | Who sets it |
+|---|---|---|
+| `status:ready-for-dev` | Pending — waiting for dev agent | PO agent / manual |
+| `status:in-dev` | In progress — dev agent working | Dev agent (Step 1.5) |
+| `status:ready-for-qa` | Pending — waiting for QA agent | Dev agent (final step) |
+| `status:in-qa` | In progress — QA agent working | QA agent (Step 1.5) |
+| `status:dev-rework` | Pending — QA failed, back to dev | QA agent (final step) |
+| `status:ready-for-docs` | Pending — waiting for docs agent | QA agent (final step) |
+| `status:in-docs` | In progress — docs agent working | Docs agent (Step 1.5) |
+| `status:done` | Complete — issue closed | Docs agent (final step) |
+
+### Commit Convention
+
+Each agent commits its own work as a discrete step before handing off to the next stage. Three commits are created per story:
+
+| Agent | When to commit | Message format |
+|---|---|---|
+| Dev | After writing IMPL file (Step 6.5), before setting `ready-for-qa` | `feat: implement #N - <title>` |
+| QA | After posting results (Step 5.5), before setting next status | `qa: test results for #N - PASS` or `FAIL` |
+| Docs | After posting docs (Step 3.5), before closing the issue | `docs: complete story #N - <title>` |
+
+Use the `git_commit` custom tool — it runs `git add -A` then `git commit`. Never skip the commit step; it is what makes the pipeline's work visible in the repo history.
+
+### Status Update Rules
+- **Every agent must set its in-progress status immediately after reading the issue** (Step 1.5 in each agent's process), before writing any files.
+- **Every agent must set the next pipeline status as its final action** before exiting.
+- Use `set_issue_status` (custom tool) — it atomically removes all existing `status:*` labels and adds the new one.
+- Never leave an issue in a stale status; if an agent errors out mid-run, the in-progress label remains as a visible signal that work was interrupted.
+
+### Agent Routing
+The orchestrator routes issues to agents based on the pending status labels:
+- `status:ready-for-dev` / `status:dev-rework` → `dev-agent`
+- `status:ready-for-qa` → `qa-agent`
+- `status:ready-for-docs` → `docs-agent`
+
 ## Development Notes
 
 - This appears to be a learning/educational repository rather than a production codebase

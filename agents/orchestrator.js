@@ -91,9 +91,13 @@ async function tick(targetNumber) {
     return;
   }
 
-  // Process sequentially to avoid GitHub API conflicts
+  // Process one story at a time with a pause between to respect rate limits
   for (const issue of issues) {
     await runIssue(issue);
+    if (issues.indexOf(issue) < issues.length - 1) {
+      console.log('\n[Orchestrator] Pausing 60s before next story...\n');
+      await new Promise(r => setTimeout(r, 60000));
+    }
   }
 }
 

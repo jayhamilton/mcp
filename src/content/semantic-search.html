@@ -1,0 +1,316 @@
+<h2 class="section-title">Semantic Search with Embeddings</h2>
+
+<div class="learning-objectives">
+  <h3>Learning Objectives</h3>
+  <ul>
+    <li>Generate dense vector embeddings from raw text using a local sentence-transformer model</li>
+    <li>Store embeddings in a lightweight ChromaDB vector database with associated metadata</li>
+    <li>Perform a semantic search query and retrieve similarity-ranked results</li>
+    <li>Understand how each step connects to build an end-to-end semantic search pipeline</li>
+  </ul>
+</div>
+
+<div class="highlight-box">
+  <h3>Prerequisites &amp; Dependencies</h3>
+  <p>All examples below are self-contained Python scripts. No external API keys are required.</p>
+  <p><strong>Python version:</strong> 3.8 or higher</p>
+  <p><strong>Install packages with pip:</strong></p>
+  <pre style="background:#1a1a1a;color:#f8f8f2;padding:0.75rem 1rem;border-radius:8px;margin-top:0.5rem;font-family:'Monaco','Menlo','Ubuntu Mono',monospace;font-size:13px;">pip install sentence-transformers chromadb</pre>
+  <p style="margin-top:0.75rem;"><strong>sentence-transformers</strong> — loads a local embedding model (downloads once, ~90 MB).</p>
+  <p><strong>chromadb</strong> — lightweight, embeddable vector database; no server setup required.</p>
+</div>
+
+<h3>What Is a Vector Database?</h3>
+<p>
+  A <strong>vector database</strong> is a specialised data store designed to persist, index, and
+  query high-dimensional numerical vectors — the kind produced by embedding models. Unlike a
+  traditional relational database that stores rows and columns and answers questions like
+  <em>"find all rows where name = 'Alice'"</em>, a vector database answers a fundamentally
+  different question: <em>"find the items whose vectors are closest to this query vector."</em>
+</p>
+<p>
+  Traditional keyword search matches exact words or phrases. Vector search matches
+  <strong>meaning</strong>. Two sentences can share zero words yet be retrieved together because
+  their embedding vectors are geometrically close — reflecting shared semantics in the
+  high-dimensional space the model learned from training data.
+</p>
+
+<div class="highlight-box">
+  <h3>Vector DB vs. Traditional DB — At a Glance</h3>
+  <p><strong>Storage unit:</strong> A vector DB stores dense float arrays (e.g., 384 or 1536 dimensions) alongside optional metadata and the original text. A relational DB stores typed columns.</p>
+  <p><strong>Query type:</strong> A vector DB answers <em>nearest-neighbour</em> queries. A relational DB answers exact-match or range queries with SQL.</p>
+  <p><strong>Indexing algorithm:</strong> Vector DBs use specialised indices (HNSW, IVF, FAISS flat) built for geometric proximity. Relational DBs use B-trees and hash indices built for equality and range lookups.</p>
+  <p><strong>Ranking:</strong> Results are ranked by a similarity metric (cosine similarity, dot product, Euclidean distance). SQL returns unordered sets unless you add <code>ORDER BY</code>.</p>
+</div>
+
+<h3>How Vectors Are Indexed and Similarity Search Works</h3>
+<p>
+  When you store a document in a vector database, the database builds or updates an
+  <strong>index</strong> over the stored vectors. This index makes it fast to find
+  <em>approximate nearest neighbours</em> (ANN) at query time without comparing every
+  stored vector individually — which would be far too slow at scale.
+</p>
+<p>
+  The most widely adopted index algorithm is <strong>HNSW (Hierarchical Navigable Small
+  World)</strong>. It organises vectors into a layered graph where each node is connected to
+  its closest neighbours. A search starts at the top (sparse) layer and progressively
+  zooms in on the closest candidate region, visiting only a tiny fraction of all vectors.
+  This gives sub-linear query time even with millions of documents.
+</p>
+<p>
+  The similarity metric most commonly used with sentence-transformer embeddings is
+  <strong>cosine similarity</strong>. Because these models output unit-normalised vectors,
+  cosine similarity simplifies to a dot product. A cosine similarity of <code>1.0</code>
+  means the two vectors point in exactly the same direction (identical meaning);
+  <code>0.0</code> means they are orthogonal (unrelated); negative values indicate
+  opposing semantics.
+</p>
+
+<div class="highlight-box">
+  <h3>Similarity Metrics — Quick Reference</h3>
+  <p><strong>Cosine similarity</strong> — measures the angle between two vectors, ignoring magnitude. Best for normalised text embeddings. Score range: −1 to 1 (higher = more similar).</p>
+  <p><strong>Dot product</strong> — equivalent to cosine similarity when vectors are unit-normalised. Fast to compute; often the default for sentence-transformer models.</p>
+  <p><strong>Euclidean distance (L2)</strong> — straight-line distance in vector space. Sensitive to vector magnitude; better suited to embeddings that are <em>not</em> normalised.</p>
+  <p>For the <code>all-MiniLM-L6-v2</code> model used in the examples below, <strong>cosine similarity</strong> is the recommended metric.</p>
+</div>
+
+<h3>Popular Vector Databases</h3>
+<p>
+  Several mature options exist across the spectrum from fully local and embedded to
+  fully managed cloud services:
+</p>
+
+<div class="highlight-box">
+  <h3>Vector Database Options</h3>
+  <p><strong>ChromaDB</strong> — Lightweight, embeddable Python library. Runs entirely in-process with no server setup. Ideal for local development and small-to-medium datasets. Used in all examples below.</p>
+  <p><strong>FAISS (Facebook AI Similarity Search)</strong> — A high-performance C++ library with Python bindings. Excels at large-scale, CPU/GPU-accelerated similarity search. No built-in persistence layer; you manage serialisation yourself.</p>
+  <p><strong>Weaviate</strong> — Open-source vector database with a GraphQL API, built-in hybrid search (keyword + vector), and support for multi-tenancy. Can be self-hosted or used via cloud.</p>
+  <p><strong>Pinecone</strong> — Fully managed, serverless vector database. Zero infrastructure to operate; scales automatically. Requires an API key and internet access — not suitable for air-gapped or strictly private deployments.</p>
+  <p>All four support cosine / dot-product similarity and HNSW-style indexing. The right choice depends on deployment constraints, dataset size, and whether you need a managed service.</p>
+</div>
+
+<h3>The End-to-End Flow: Text → Embedding → Vector DB → Query</h3>
+<p>
+  The complete semantic search pipeline has four clearly delineated steps. Each step is
+  independent and can be swapped out (e.g., change the embedding model, or swap ChromaDB
+  for Pinecone) without altering the others:
+</p>
+<ol style="margin: 1rem 0 1rem 1.5rem; line-height: 2;">
+  <li>
+    <strong>Embed your documents.</strong> Pass each text document through an embedding
+    model (e.g., <code>all-MiniLM-L6-v2</code>) to produce a dense vector. This happens
+    once at index time.
+  </li>
+  <li>
+    <strong>Store in the vector database.</strong> Persist each vector alongside its
+    original text and any metadata (source file, date, category) that you want to filter
+    on or display in results. The database builds an HNSW index automatically.
+  </li>
+  <li>
+    <strong>Embed the query.</strong> When a user submits a search query, embed it with
+    the <em>same</em> model used for indexing. This places the query in the same vector
+    space as the stored documents.
+  </li>
+  <li>
+    <strong>Query by similarity.</strong> Ask the database for the top-<em>k</em> stored
+    vectors with the highest cosine similarity to the query vector. The database returns
+    the matching documents ranked by relevance — no keyword overlap required.
+  </li>
+</ol>
+
+<div class="highlight-box">
+  <h3>Why This Matters in Constrained Environments</h3>
+  <p>LLM-based search typically requires sending your data to a remote API, paying per token, and accepting the latency and privacy implications of an external service call.</p>
+  <p>The embedding + vector DB approach described here runs <strong>entirely on your own hardware</strong>: the <code>all-MiniLM-L6-v2</code> model is ~90 MB and runs on CPU; ChromaDB stores the index on disk. No API key, no internet connection, no data leaving your environment.</p>
+  <p>This makes it the right choice for: air-gapped systems, sensitive enterprise data, offline applications, edge deployments, and cost-sensitive workloads at scale.</p>
+</div>
+
+<h3>Example 1 — Generating Embeddings from Text</h3>
+<p>
+  The first step in any semantic search pipeline is turning raw text into numerical vectors (embeddings).
+  Similar sentences produce vectors that are close together in high-dimensional space; dissimilar ones
+  are far apart. We use the <code>all-MiniLM-L6-v2</code> model from Sentence Transformers — a compact,
+  fast model that works entirely offline once downloaded.
+</p>
+
+<div class="code-block">
+  <div class="ace-editor large" id="editor-semantic-1" data-language="python"># ── Example 1: Generating Embeddings ──────────────────────────────────────────
+# Dependency: pip install sentence-transformers
+
+from sentence_transformers import SentenceTransformer
+
+# 1. Load a pre-trained embedding model.
+#    'all-MiniLM-L6-v2' is small (~90 MB) and runs on CPU.
+#    The model is downloaded automatically on the first run and cached locally.
+model = SentenceTransformer("all-MiniLM-L6-v2")
+
+# 2. Define the documents you want to embed.
+#    Each string is treated as an independent passage.
+documents = [
+    "The Model Context Protocol lets AI assistants connect to external data sources.",
+    "Vector databases store high-dimensional embeddings for fast similarity search.",
+    "Semantic search finds conceptually similar results, not just keyword matches.",
+    "ChromaDB is a lightweight, embeddable vector database written in Python.",
+    "Sentence transformers convert natural language into dense numerical vectors.",
+]
+
+# 3. Generate embeddings.
+#    encode() returns a NumPy array of shape (num_documents, embedding_dim).
+#    For all-MiniLM-L6-v2 the embedding dimension is 384.
+embeddings = model.encode(documents)
+
+# 4. Inspect the output.
+print(f"Number of documents : {len(documents)}")
+print(f"Embedding shape     : {embeddings.shape}")   # (5, 384)
+print(f"First vector (first 5 dimensions): {embeddings[0][:5]}")
+
+# Each row in `embeddings` is the vector representation of the corresponding document.
+# Similar documents will have a high cosine similarity score (close to 1.0).
+</div>
+</div>
+
+<h3>Example 2 — Storing Embeddings in a Vector Database</h3>
+<p>
+  Once we have embeddings, we persist them in ChromaDB. ChromaDB handles the storage and indexing
+  automatically. Each document is stored alongside its embedding and optional metadata (e.g., a
+  source filename or timestamp) so you can filter or display it in search results later.
+</p>
+
+<div class="code-block">
+  <div class="ace-editor large" id="editor-semantic-2" data-language="python"># ── Example 2: Storing Embeddings in ChromaDB ─────────────────────────────────
+# Dependencies: pip install sentence-transformers chromadb
+
+import chromadb
+from sentence_transformers import SentenceTransformer
+
+# 1. Create a ChromaDB client.
+#    PersistentClient stores the database on disk so data survives restarts.
+#    Use chromadb.Client() for a purely in-memory (ephemeral) store.
+client = chromadb.PersistentClient(path="./chroma_store")
+
+# 2. Get or create a named collection.
+#    A collection groups related documents — think of it like a table.
+#    cosine distance is best for normalised sentence-transformer embeddings.
+collection = client.get_or_create_collection(
+    name="documents",
+    metadata={"hnsw:space": "cosine"},   # use cosine similarity for ranking
+)
+
+# 3. Prepare documents and their metadata.
+documents = [
+    "The Model Context Protocol lets AI assistants connect to external data sources.",
+    "Vector databases store high-dimensional embeddings for fast similarity search.",
+    "Semantic search finds conceptually similar results, not just keyword matches.",
+    "ChromaDB is a lightweight, embeddable vector database written in Python.",
+    "Sentence transformers convert natural language into dense numerical vectors.",
+]
+
+# Unique IDs are required by ChromaDB — they identify each record.
+doc_ids = [f"doc_{i}" for i in range(len(documents))]
+
+# Optional metadata attached to each document (filterable at query time).
+metadatas = [{"source": "manual", "index": i} for i in range(len(documents))]
+
+# 4. Generate embeddings with the same model used at query time.
+#    Consistency matters: always use the same model for indexing and querying.
+model = SentenceTransformer("all-MiniLM-L6-v2")
+embeddings = model.encode(documents).tolist()   # ChromaDB expects plain Python lists
+
+# 5. Upsert documents into the collection.
+#    upsert() inserts new records or updates existing ones with the same ID.
+collection.upsert(
+    ids=doc_ids,
+    documents=documents,         # raw text (stored for display in results)
+    embeddings=embeddings,       # pre-computed vectors
+    metadatas=metadatas,         # optional filter fields
+)
+
+print(f"Collection '{collection.name}' now contains {collection.count()} documents.")
+# Collection 'documents' now contains 5 documents.
+</div>
+</div>
+
+<h3>Example 3 — Performing a Semantic Search Query</h3>
+<p>
+  With documents indexed, we can query the collection using natural language. ChromaDB embeds the
+  query with the same model, computes cosine distances to every stored vector, and returns the
+  closest matches ranked by similarity — no keyword overlap required.
+</p>
+
+<div class="code-block">
+  <div class="ace-editor large" id="editor-semantic-3" data-language="python"># ── Example 3: Semantic Search Query & Ranked Results ─────────────────────────
+# Dependencies: pip install sentence-transformers chromadb
+# Run Example 2 first (or re-run it here) to populate the collection.
+
+import chromadb
+from sentence_transformers import SentenceTransformer
+
+# 1. Reconnect to the persisted ChromaDB store and load the collection.
+client = chromadb.PersistentClient(path="./chroma_store")
+collection = client.get_or_create_collection(
+    name="documents",
+    metadata={"hnsw:space": "cosine"},
+)
+
+# 2. Load the same embedding model used during indexing.
+#    Using a different model would produce incompatible vector spaces.
+model = SentenceTransformer("all-MiniLM-L6-v2")
+
+# 3. Define the natural-language query.
+#    The query does NOT need to share keywords with the stored documents —
+#    semantic similarity is based on meaning, not exact word matches.
+query = "How do I search documents by meaning rather than keywords?"
+
+# 4. Embed the query into the same vector space as the stored documents.
+query_embedding = model.encode(query).tolist()
+
+# 5. Query the collection for the top-3 most similar documents.
+#    n_results controls how many ranked matches are returned.
+results = collection.query(
+    query_embeddings=[query_embedding],
+    n_results=3,
+    include=["documents", "distances", "metadatas"],  # fields to return
+)
+
+# 6. Display the ranked results.
+#    'distances' are cosine distances (0 = identical, 1 = completely different).
+#    Lower distance → higher semantic similarity.
+print(f"Query: \"{query}\"\n")
+print("Top results (ranked by similarity):")
+print("-" * 60)
+
+for rank, (doc, distance, meta) in enumerate(
+    zip(
+        results["documents"][0],   # list of matching document texts
+        results["distances"][0],   # corresponding cosine distances
+        results["metadatas"][0],   # corresponding metadata dicts
+    ),
+    start=1,
+):
+    similarity = 1 - distance      # convert distance to a 0–1 similarity score
+    print(f"Rank {rank}  |  similarity: {similarity:.4f}  |  source: {meta['source']}")
+    print(f"  \"{doc}\"")
+    print()
+
+# Expected output (approximate — exact scores depend on model version):
+#
+# Rank 1  |  similarity: 0.7841  |  source: manual
+#   "Semantic search finds conceptually similar results, not just keyword matches."
+#
+# Rank 2  |  similarity: 0.6903  |  source: manual
+#   "Vector databases store high-dimensional embeddings for fast similarity search."
+#
+# Rank 3  |  similarity: 0.5512  |  source: manual
+#   "Sentence transformers convert natural language into dense numerical vectors."
+</div>
+</div>
+
+<div class="highlight-box">
+  <h3>Key Takeaways</h3>
+  <p><strong>Same model, always:</strong> The embedding model used to index documents <em>must</em> be the same one used to embed queries. Mixing models produces meaningless similarity scores.</p>
+  <p><strong>Cosine similarity:</strong> Sentence-transformer embeddings are unit-normalised, so cosine similarity (1 − cosine distance) is the standard metric. A score above ~0.7 typically indicates strong semantic similarity.</p>
+  <p><strong>No API keys needed:</strong> <code>all-MiniLM-L6-v2</code> runs entirely locally after the initial model download. ChromaDB also runs in-process — no server required.</p>
+  <p><strong>Scaling up:</strong> For larger corpora, swap ChromaDB for Pinecone, Weaviate, or pgvector, and consider a larger model such as <code>all-mpnet-base-v2</code> for improved accuracy.</p>
+</div>
+
+<button class="btn" onclick="markSectionComplete('semantic-search')">Mark Complete</button>

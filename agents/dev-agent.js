@@ -50,6 +50,10 @@ Call get_issue with issue_number=${issueNumber}.
 Then call get_issue comments via list the issue to check for existing comments.
 If status is dev-rework, read comments to find the QA failure details.
 
+### Step 1.5: Mark the issue as in-progress
+Call set_issue_status with issue_number=${issueNumber} and status="in-dev".
+Do this immediately after reading the issue, before any file work.
+
 ### Step 2: Read relevant source files
 Use read_file on source files you need to understand before coding.
 
@@ -97,6 +101,12 @@ Call add_issue_comment on issue ${issueNumber} with this body:
 ### Step 6: Write implementation summary to file
 Write the same content to .work/implementations/IMPL-${issueNumber}.md
 
+### Step 6.5: Commit all changes
+Call git_commit with a message in the format:
+  feat: implement #${issueNumber} - <story title in imperative form>
+
+This commits the spec, all modified source files, and the implementation summary together.
+
 ### Step 7: Update the issue status
 Call set_issue_status with issue_number=${issueNumber} and status="ready-for-qa"
 
@@ -128,7 +138,7 @@ async function run(issueNumber) {
     const allTools = [
       ...toAnthropicTools(ghTools.filter(t => allowedGhTools.includes(t.name))),
       ...toAnthropicTools(fsTools.filter(t => allowedFsTools.includes(t.name))),
-      // Only expose set_issue_status from custom tools
+        customDefs.find(t => t.name === 'git_commit'),
       customDefs.find(t => t.name === 'set_issue_status')
     ].filter(Boolean);
 

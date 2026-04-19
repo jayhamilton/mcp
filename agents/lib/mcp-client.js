@@ -19,7 +19,11 @@ async function createGitHubClient() {
   const transport = new StdioClientTransport({
     command: 'node',
     args: [GITHUB_SERVER],
-    env: { ...process.env }
+    env: {
+      ...process.env,
+      // GitHub MCP server reads GITHUB_PERSONAL_ACCESS_TOKEN
+      GITHUB_PERSONAL_ACCESS_TOKEN: process.env.GITHUB_TOKEN
+    }
   });
 
   const client = new Client({ name: 'mcp-agent', version: '1.0.0' });
